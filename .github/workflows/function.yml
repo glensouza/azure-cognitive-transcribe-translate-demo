@@ -1,0 +1,87 @@
+name: Build and deploy web and function apps
+      
+on:
+  push:
+    branches:
+      - "main" 
+    paths:
+      - "ServiceBus/**"
+      - ".github/workflows/web.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './ServiceBus/GSOR.Functions'
+  AZURE_WEBAPP_PACKAGE_PATH: './ServiceBus/GSOR.Web'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Log into Azure
+      - uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v2
+
+      - name: Set up DotNet 6
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Set up DotNet 7
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x'
+          include-prerelease: true
+
+      - name: 'Build Function Project'
+        shell: bash
+        run: |
+          pushd 'ServiceBus/GSOR.Functions'
+          dotnet build --configuration Release --output ./functionoutput
+          popd
+
+      - name: 'Build Web Project'
+        shell: bash
+        run: |
+          pushd 'ServiceBus/GSOR.Web'
+          dotnet build --configuration Release
+          dotnet publish -c Release -o ./weboutput
+          popd
+
+      - name: 'Build Web Viewer Project'
+        shell: bash
+        run: |
+          pushd 'ServiceBus/GSOR.Web.Viewer'
+          dotnet build --configuration Release
+          dotnet publish -c Release -o ./webvieweroutput
+          popd
+
+      - name: 'Deploy Function App'
+        uses: Azure/functions-action@v1
+        with:
+          app-name: '${{ vars.RESOURCE_NAME }}func'
+          slot-name: 'Production'
+          package: 'ServiceBus/GSOR.Functions/functionoutput'
+
+      - name: 'Deploy Web App'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: '${{ vars.RESOURCE_NAME }}web'
+          slot-name: 'Production'
+          package: 'ServiceBus/GSOR.Web/weboutput'
+
+      - name: 'Deploy Web Viewer'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: '${{ vars.RESOURCE_NAME }}webviewer'
+          slot-name: 'Production'
+          package: 'ServiceBus/GSOR.Web.Viewer/webvieweroutput/wwwroot'

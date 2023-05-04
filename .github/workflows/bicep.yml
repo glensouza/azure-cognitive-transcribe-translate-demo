@@ -1,0 +1,49 @@
+name: Provision Infrastructure
+
+on:
+  push:
+    branches:
+      - "main" 
+    paths:
+      - "Bicep/**"
+      - ".github/workflows/bicep.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  provision-service-bus:
+    runs-on: ubuntu-latest
+    steps:
+
+      # Checkout code
+    - uses: actions/checkout@main
+
+      # Log into Azure
+    - uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    # - name: Empty Out Environment
+    #   uses: azure/CLI@v1
+    #   with:
+    #     azcliversion: 2.30.0
+    #     inlineScript: |
+    #       az group delete --name ${{ vars.RESOURCE_NAME }}
+    #       az keyvault purge --name tolower(${{ vars.RESOURCE_NAME }}keyvault)
+
+    - name: Provision Resources
+      uses: azure/arm-deploy@v1
+      if: always()
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        scope: subscription
+        region: centralus
+        template: ./Bicep/main.bicep
+        parameters: location=centralus resourceName=${{ vars.RESOURCE_NAME }}
+        failOnStdErr: false
+        deploymentName: bicep-ci-${{ github.run_id }}

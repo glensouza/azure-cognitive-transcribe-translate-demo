@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TranscribeTranslateDemo.Web
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TranscribeTranslateDemo.Infrastructure", "TranscribeTranslateDemo.Infrastructure", "{30F24333-A9C5-4B65-A71E-173CBFD7054F}"
 	ProjectSection(SolutionItems) = preProject
+		TranscribeTranslateDemo.Infrastructure\commands.md = TranscribeTranslateDemo.Infrastructure\commands.md
 		TranscribeTranslateDemo.Infrastructure\main.bicep = TranscribeTranslateDemo.Infrastructure\main.bicep
+		TranscribeTranslateDemo.Infrastructure\README.md = TranscribeTranslateDemo.Infrastructure\README.md
 		TranscribeTranslateDemo.Infrastructure\resources.bicep = TranscribeTranslateDemo.Infrastructure\resources.bicep
 	EndProjectSection
 EndProject

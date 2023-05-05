@@ -28,19 +28,19 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Delete speech
-      uses: azure/CLI@v1
-      continue-on-error: true
-      with:
-        azcliversion: 2.30.0
-        inlineScript: az cognitiveservices account delete --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
+    # - name: Delete speech
+    #   uses: azure/CLI@v1
+    #   continue-on-error: true
+    #   with:
+    #     azcliversion: 2.30.0
+    #     inlineScript: az cognitiveservices account delete --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
 
-    - name: Purge speech
-      uses: azure/CLI@v1
-      continue-on-error: true
-      with:
-        azcliversion: 2.30.0
-        inlineScript: az cognitiveservices account purge --location centralus --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
+    # - name: Purge speech
+    #   uses: azure/CLI@v1
+    #   continue-on-error: true
+    #   with:
+    #     azcliversion: 2.30.0
+    #     inlineScript: az cognitiveservices account purge --location centralus --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
 
     - name: Empty Out Environment
       uses: azure/CLI@v1

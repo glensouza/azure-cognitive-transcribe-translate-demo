@@ -14,7 +14,7 @@ permissions:
   contents: read
 
 jobs:
-  provision-service-bus:
+  provision-azure-resources:
     runs-on: ubuntu-latest
     steps:
 

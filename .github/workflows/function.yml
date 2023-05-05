@@ -1,12 +1,13 @@
-name: Build and deploy web and function apps
+name: Function App Build and Deploy 
       
 on:
   push:
     branches:
       - "main" 
     paths:
-      - "ServiceBus/**"
-      - ".github/workflows/web.yml"
+      - "TranscribeTranslateDemo.API/**"
+      - "TranscribeTranslateDemo.Shared/**"
+      - ".github/workflows/function.yml"
   workflow_dispatch:
 
 permissions:
@@ -14,8 +15,8 @@ permissions:
   contents: read
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: './ServiceBus/GSOR.Functions'
-  AZURE_WEBAPP_PACKAGE_PATH: './ServiceBus/GSOR.Web'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './TranscribeTranslateDemo.API'
+  DOTNET_VERSION: '7.0.x'
 
 jobs:
   build-and-deploy:
@@ -31,57 +32,22 @@ jobs:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@v2
 
-      - name: Set up DotNet 6
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Set up DotNet 7
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '7.x'
-          include-prerelease: true
-
-      - name: 'Build Function Project'
+      - name: 'Resolve Project Dependencies Using Dotnet'
         shell: bash
         run: |
-          pushd 'ServiceBus/GSOR.Functions'
-          dotnet build --configuration Release --output ./functionoutput
-          popd
-
-      - name: 'Build Web Project'
-        shell: bash
-        run: |
-          pushd 'ServiceBus/GSOR.Web'
-          dotnet build --configuration Release
-          dotnet publish -c Release -o ./weboutput
-          popd
-
-      - name: 'Build Web Viewer Project'
-        shell: bash
-        run: |
-          pushd 'ServiceBus/GSOR.Web.Viewer'
-          dotnet build --configuration Release
-          dotnet publish -c Release -o ./webvieweroutput
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet build --configuration Release --output ./output
           popd
 
       - name: 'Deploy Function App'
         uses: Azure/functions-action@v1
+        id: fa
         with:
           app-name: '${{ vars.RESOURCE_NAME }}func'
           slot-name: 'Production'
-          package: 'ServiceBus/GSOR.Functions/functionoutput'
-
-      - name: 'Deploy Web App'
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: '${{ vars.RESOURCE_NAME }}web'
-          slot-name: 'Production'
-          package: 'ServiceBus/GSOR.Web/weboutput'
-
-      - name: 'Deploy Web Viewer'
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: '${{ vars.RESOURCE_NAME }}webviewer'
-          slot-name: 'Production'
-          package: 'ServiceBus/GSOR.Web.Viewer/webvieweroutput/wwwroot'
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'

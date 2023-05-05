@@ -5,7 +5,7 @@ on:
     branches:
       - "main" 
     paths:
-      - "Bicep/**"
+      - "TranscribeTranslateDemo.Infrastructure/**"
       - ".github/workflows/bicep.yml"
   workflow_dispatch:
 
@@ -28,13 +28,11 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    # - name: Empty Out Environment
-    #   uses: azure/CLI@v1
-    #   with:
-    #     azcliversion: 2.30.0
-    #     inlineScript: |
-    #       az group delete --name ${{ vars.RESOURCE_NAME }}
-    #       az keyvault purge --name tolower(${{ vars.RESOURCE_NAME }}keyvault)
+    - name: Empty Out Environment
+      uses: azure/CLI@v1
+      with:
+        azcliversion: 2.30.0
+        inlineScript: az group delete --name ${{ vars.RESOURCE_NAME }}
 
     - name: Provision Resources
       uses: azure/arm-deploy@v1

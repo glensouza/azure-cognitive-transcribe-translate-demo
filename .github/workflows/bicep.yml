@@ -33,8 +33,9 @@ jobs:
       with:
         azcliversion: 2.30.0
         inlineScript: |
+          az cognitiveservices account delete --name ${{ vars.RESOURCE_NAME }}speech
+          az cognitiveservices account purge --location centralus --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
           az group delete --name ${{ vars.RESOURCE_NAME }} --yes
-          az cognitiveservices account delete --name ${{ vars.RESOURCE_NAME }}speech --resource-group ${{ vars.RESOURCE_NAME }}
 
     - name: Provision Resources
       uses: azure/arm-deploy@v1

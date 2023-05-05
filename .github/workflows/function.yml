@@ -8,8 +8,9 @@ on:
       - "TranscribeTranslateDemo.API/**"
       - "TranscribeTranslateDemo.Shared/**"
       - ".github/workflows/function.yml"
-      - "!TranscribeTranslateDemo.Infrastructure/**"
-      - "!.github/workflows/bicep.yml"
+    paths-ignore:
+      - "TranscribeTranslateDemo.Infrastructure/**"
+      - ".github/workflows/bicep.yml"
   workflow_dispatch:
   workflow_call:
     secrets:

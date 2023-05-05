@@ -16,7 +16,7 @@ namespace TranscribeTranslateDemo.API
         }
 
         [Function("WeatherForecast")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req)
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
             Random randomNumber = new();
             int temp = 0;

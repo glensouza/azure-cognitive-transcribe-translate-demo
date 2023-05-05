@@ -2,5 +2,5 @@
 
 public class Settings
 {
-    public string FunctionKey { get; set; }
+    public string Test { get; set; }
 }

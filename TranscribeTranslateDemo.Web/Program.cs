@@ -12,6 +12,7 @@ HttpClient http = new()
     BaseAddress = new Uri(builder.Configuration["API_Prefix"] ?? builder.HostEnvironment.BaseAddress),
     DefaultRequestHeaders =
     {
+        { "x-function-key", builder.Configuration["FunctionKey"] },
         { "Accept", "application/json" }
     }
 };
@@ -20,7 +21,6 @@ using HttpResponseMessage response = await http.GetAsync("/api/settings");
 await using Stream stream = await response.Content.ReadAsStreamAsync();
 
 builder.Configuration.AddJsonStream(stream);
-http.DefaultRequestHeaders.Add("x-function-key", builder.Configuration["FunctionKey"]);
 
 builder.Services.AddScoped(sp => http);
 

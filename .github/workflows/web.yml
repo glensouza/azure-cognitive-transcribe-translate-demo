@@ -8,6 +8,8 @@ on:
         - "TranscribeTranslateDemo.Web/**"
         - "TranscribeTranslateDemo.Shared/**"
         - ".github/workflows/web.yml"
+        - "!TranscribeTranslateDemo.Infrastructure/**"
+        - "!.github/workflows/bicep.yml"
   workflow_dispatch:
   workflow_call:
     secrets:

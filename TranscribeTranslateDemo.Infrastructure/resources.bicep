@@ -218,7 +218,6 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
       FUNCTIONS_EXTENSION_VERSION: '~4'
       SignalrServiceConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
-      FunctionKey: listkeys('${functionApp.id}/host/default', '2016-08-01').functionKeys.default
     }
     dependsOn: [storageFunctionAppPermissions]
   }  

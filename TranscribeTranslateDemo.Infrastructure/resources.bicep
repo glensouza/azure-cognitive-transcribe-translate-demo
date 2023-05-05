@@ -104,6 +104,55 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
   }
+
+  resource logAnalyticsDataExport 'dataexports@2020-08-01' = {
+    name: 'DataExport'
+    properties: {
+      dataExportId: '8493dffe-42b2-438e-90b9-e351a4960e18'
+      destination: {
+        resourceId: storageAccount.id
+        metaData: {}
+      }
+      tableNames: [
+        'Alert'
+        'AppCenterError'
+        'ComputerGroup'
+        'InsightsMetrics'
+        'Operation'
+        'Usage'
+      ]
+      enable: true
+      createdDate: '2023-05-05T15:57:53.6038946Z'
+      lastModifiedDate: '2023-05-05T15:57:53.6038946Z'
+    }
+  }
+
+  resource logAnalyticsAlerts 'linkedstorageaccounts@2020-08-01' = {
+    name: 'Alerts'
+    properties: {
+      storageAccountIds: [
+        storageAccount.id
+      ]
+    }
+  }
+
+  resource logAnalyticsCustomLogs 'linkedstorageaccounts@2020-08-01' = {
+    name: 'CustomLogs'
+    properties: {
+      storageAccountIds: [
+        storageAccount.id
+      ]
+    }
+  }
+
+  resource logAnalyticsQuery 'linkedstorageaccounts@2020-08-01' = {
+    name: 'Query'
+    properties: {
+      storageAccountIds: [
+        storageAccount.id
+      ]
+    }
+  }
 }
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {

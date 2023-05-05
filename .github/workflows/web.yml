@@ -32,7 +32,7 @@ jobs:
       uses: azure/CLI@v1
       with:
         azcliversion: latest
-        inlineScript: echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa1 --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
+        inlineScript: echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
 
       # Checkout code
     - uses: actions/checkout@v3
@@ -52,3 +52,9 @@ jobs:
         api_location: "" # Api source code path - optional
         output_location: "wwwroot" # Built app content directory - optional
         ###### End of Repository/Build Configurations ######
+
+    - name: Reset SWA Token
+      uses: azure/CLI@v1
+      with:
+        azcliversion: latest
+        inlineScript: az staticwebapp secrets reset-api-key --name ${{ vars.RESOURCE_NAME }}swa --resource-group ${{ vars.RESOURCE_NAME }} --no-wait

@@ -46,7 +46,7 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type systemKeys --key-name default) >/dev/null || true
+          $FUNK_RESET=$(az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type systemKeys --key-name default) >/dev/null || true
           $FUNC_KEY=$(az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'systemKeys.default') | tr -d '"'
           echo ::set-output name=key::$FUNC_KEY
           echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"

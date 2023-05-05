@@ -209,23 +209,20 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     }
     httpsOnly: true
   }
-}
 
-resource functionAppConfiguration 'Microsoft.Web/sites/config@2022-09-01' = {
-  parent: functionApp
-  name: 'appsettings'
-  properties: {
-    AzureWebJobsStorage: storageAccountConnectionString
-    APPINSIGHTS_INSTRUMENTATIONKEY: applicationInsights.properties.InstrumentationKey
-    FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
-    FUNCTIONS_EXTENSION_VERSION: '~4'
-    SignalrServiceConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
-    FunctionKey: listkeys('${functionApp.id}/host/default', '2016-08-01').functionKeys.default
-  }
-  dependsOn: [
-    storageFunctionAppPermissions
-  ]
-}  
+  resource functionAppConfiguration 'config' = {
+    name: 'appsettings'
+    properties: {
+      AzureWebJobsStorage: storageAccountConnectionString
+      APPINSIGHTS_INSTRUMENTATIONKEY: applicationInsights.properties.InstrumentationKey
+      FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
+      FUNCTIONS_EXTENSION_VERSION: '~4'
+      SignalrServiceConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
+      FunctionKey: listkeys('${functionApp.id}/host/default', '2016-08-01').functionKeys.default
+    }
+    dependsOn: [storageFunctionAppPermissions]
+  }  
+}
 
 resource staticWebApp 'Microsoft.Web/staticSites@2020-12-01' = {
   name: webAppName

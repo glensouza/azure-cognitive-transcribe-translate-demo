@@ -29,7 +29,7 @@ $appObjectId = (Get-AzADApplication -DisplayName $applicationName).Id
 New-AzADServicePrincipal -ApplicationId $clientId
 $objectId = (Get-AzADServicePrincipal -DisplayName $applicationName).Id
 
-New-AzRoleAssignment -ObjectId $objectId -RoleDefinitionName Contributor
+New-AzRoleAssignment -RoleDefinitionName Owner -ObjectId $objectId
 $subscriptionId = (Get-AzContext).Subscription.Id
 $tenantId = (Get-AzContext).Subscription.TenantId
 

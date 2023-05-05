@@ -125,7 +125,9 @@ resource appServicePlanFunc 'Microsoft.Web/serverfarms@2022-03-01' = {
     name: appServicePlanFuncSKU
     tier: appServicePlanFuncTier
   }
-  properties: {}
+  properties: {
+    reserved: true
+  }
 }
 
 resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
@@ -135,7 +137,6 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
   properties: {
     enabled: true
     serverFarmId: appServicePlanFunc.id
-    reserved: true
     siteConfig: {
       numberOfWorkers: 1
       linuxFxVersion: 'DOTNET-ISOLATED|7.0'

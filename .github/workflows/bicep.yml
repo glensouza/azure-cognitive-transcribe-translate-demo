@@ -41,7 +41,7 @@ jobs:
         subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         scope: subscription
         region: centralus
-        template: ./Bicep/main.bicep
+        template: ./TranscribeTranslateDemo.Infrastructure/main.bicep
         parameters: location=centralus resourceName=${{ vars.RESOURCE_NAME }}
         failOnStdErr: false
         deploymentName: bicep-ci-${{ github.run_id }}

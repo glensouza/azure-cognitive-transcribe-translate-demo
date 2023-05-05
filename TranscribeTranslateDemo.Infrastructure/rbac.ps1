@@ -34,7 +34,7 @@ $subscriptionId = (Get-AzContext).Subscription.Id
 $tenantId = (Get-AzContext).Subscription.TenantId
 
 $subject = 'repo:' + $repoName + ':ref:refs/heads/main'
-New-AzADAppFederatedCredential -ApplicationObjectId $appObjectId -Audience api://AzureADTokenExchange -Issuer 'https://token.actions.githubusercontent.com/' -Name 'GitHub-Actions' -Subject $subject
+New-AzADAppFederatedCredential -ApplicationObjectId $appObjectId -Audience 'api://AzureADTokenExchange' -Issuer 'https://token.actions.githubusercontent.com' -Name 'GitHub-Actions' -Subject $subject
 
 Write-Host "AZURE_CLIENT_ID: $clientId"
 Write-Host "AZURE_TENANT_ID: $tenantId"

@@ -36,12 +36,14 @@ jobs:
 
     - name: Purge speech
       uses: azure/CLI@v1
+      if: always()
       with:
         azcliversion: 2.30.0
         inlineScript: az cognitiveservices account purge --location centralus --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
 
     - name: Empty Out Environment
       uses: azure/CLI@v1
+      if: always()
       with:
         azcliversion: 2.30.0
         inlineScript: az group delete --name ${{ vars.RESOURCE_NAME }} --yes

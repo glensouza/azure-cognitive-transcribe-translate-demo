@@ -62,6 +62,8 @@ jobs:
 
   call-workflow-functions:
     uses: ./.github/workflows/function.yml
+    needs: provision-azure-resources
 
   call-workflow-web:
     uses: ./.github/workflows/web.yml
+    needs: provision-azure-resources

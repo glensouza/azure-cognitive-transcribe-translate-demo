@@ -6,8 +6,8 @@ on:
       - "main" 
     paths:
       - "TranscribeTranslateDemo.Infrastructure/**"
-      - ".github/workflows/bicep.yml"
       - "!TranscribeTranslateDemo.Infrastructure/cleanup.azcli"
+      - ".github/workflows/bicep.yml"
   workflow_dispatch:
 
 permissions:

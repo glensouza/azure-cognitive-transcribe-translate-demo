@@ -9,6 +9,7 @@ on:
       - "TranscribeTranslateDemo.Shared/**"
       - ".github/workflows/function.yml"
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   id-token: write

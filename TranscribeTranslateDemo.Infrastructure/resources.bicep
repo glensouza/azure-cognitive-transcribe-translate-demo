@@ -44,6 +44,7 @@ resource speechService 'Microsoft.CognitiveServices/accounts@2022-12-01' = {
       ipRules: []
     }
     publicNetworkAccess: 'Enabled'
+    restore: false
   }
 }
 

@@ -48,7 +48,7 @@ jobs:
         submodules: true
 
     - name: Set Function Key
-      run: ::add-mask::sed -i 's/abcdefghijklmnopqrstuvwxyz/${{ steps.function-key.outputs.FUNCTION_KEY }}/g' ./TranscribeTranslateDemo.Web/wwwroot/appsettings.json
+      run: sed -i 's/abcdefghijklmnopqrstuvwxyz/${{ steps.function-key.outputs.FUNCTION_KEY }}/g' ./TranscribeTranslateDemo.Web/wwwroot/appsettings.json >/dev/null || true
 
     - name: Get SWA Token
       id: swa-token

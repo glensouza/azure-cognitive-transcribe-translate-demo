@@ -34,6 +34,9 @@ resource speechService 'Microsoft.CognitiveServices/accounts@2022-12-01' = {
     name: speechServiceSKU
   }
   kind: 'SpeechServices'
+  identity: {
+    type: 'None'
+  }
   properties: {
     networkAcls: {
       defaultAction: 'Allow'
@@ -131,6 +134,9 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
   name: functionAppName
   location: location
   kind: 'functionapp,linux'
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     enabled: true
     serverFarmId: appServicePlanFunc.id

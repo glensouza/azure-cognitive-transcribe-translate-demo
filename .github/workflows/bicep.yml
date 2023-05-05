@@ -18,10 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      # Checkout code
-    - uses: actions/checkout@main
-
-      # Log into Azure
+    # Log into Azure
     - uses: azure/login@v1
       with:
         client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -36,6 +33,9 @@ jobs:
           az cognitiveservices account delete --name ${{ vars.RESOURCE_NAME }}speech
           az cognitiveservices account purge --location centralus --resource-group ${{ vars.RESOURCE_NAME }} --name ${{ vars.RESOURCE_NAME }}speech
           az group delete --name ${{ vars.RESOURCE_NAME }} --yes
+
+    # Checkout code
+    - uses: actions/checkout@main
 
     - name: Provision Resources
       uses: azure/arm-deploy@v1

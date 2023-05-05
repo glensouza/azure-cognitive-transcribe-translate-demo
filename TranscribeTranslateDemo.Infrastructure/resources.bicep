@@ -34,9 +34,6 @@ resource speechService 'Microsoft.CognitiveServices/accounts@2022-12-01' = {
     name: speechServiceSKU
   }
   kind: 'SpeechServices'
-  identity: {
-    type: 'None'
-  }
   properties: {
     networkAcls: {
       defaultAction: 'Allow'

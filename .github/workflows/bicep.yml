@@ -32,7 +32,9 @@ jobs:
       uses: azure/CLI@v1
       with:
         azcliversion: 2.30.0
-        inlineScript: az group delete --name ${{ vars.RESOURCE_NAME }}
+        inlineScript: |
+          az group delete --name ${{ vars.RESOURCE_NAME }} --yes
+          az cognitiveservices account delete --name ${{ vars.RESOURCE_NAME }}speech --resource-group ${{ vars.RESOURCE_NAME }}
 
     - name: Provision Resources
       uses: azure/arm-deploy@v1

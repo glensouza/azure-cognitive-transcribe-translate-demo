@@ -46,12 +46,13 @@ jobs:
       with:
         azcliversion: latest
         inlineScript: |
-          $FUNK_RESET=$(az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type functionKeys --key-name default) >/dev/null || true
+          FUNC_RESET=$(az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type functionKeys --key-name default) >/dev/null || true
           echo FUNC_KEY=$(az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'functionKeys.default') | tr -d '"' >> "$GITHUB_OUTPUT"
+          echo ::add-mask::$FUNC_KEY
           echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
-    - name: create mask 
-      id: test-secret
-      run: echo ::add-mask::${{steps.tokens.outputs.FUNC_KEY}}
+    # - name: create mask 
+    #   id: test-secret
+    #   run: echo ::add-mask::${{steps.tokens.outputs.FUNC_KEY}}
     
     - run: echo ${{steps.tokens.outputs.FUNC_KEY}}
 

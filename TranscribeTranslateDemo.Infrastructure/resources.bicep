@@ -215,7 +215,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     properties: {
       AzureWebJobsStorage: storageAccountConnectionString
       APPINSIGHTS_INSTRUMENTATIONKEY: applicationInsights.properties.InstrumentationKey
-      FUNCTIONS_WORKER_RUNTIME: 'dotnet'
+      FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
       FUNCTIONS_EXTENSION_VERSION: '~4'
       SignalrServiceConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
     }

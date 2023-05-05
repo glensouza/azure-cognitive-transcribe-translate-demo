@@ -1,0 +1,13 @@
+az upgrade
+az login
+az account show
+az account set --subscription 66effa16-8b4b-4047-b8e1-d390ceddd4a5
+
+az cognitiveservices account delete --name GSTransDemospeech --resource-group GSTransDemo
+az cognitiveservices account purge --location centralus --resource-group GSTransDemo --name GSTransDemospeech
+
+az group delete --name GSTransDemo --yes
+
+az staticwebapp secrets list --name GSTransDemoswa --resource-group GSTransDemo
+az staticwebapp secrets list --name GSTransDemoswa --query 'properties.apiKey'
+az staticwebapp secrets reset-api-key --name GSTransDemoswa --resource-group GSTransDemo --no-wait

@@ -35,13 +35,6 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Get SWA Token
-      id: swa-token
-      uses: azure/CLI@v1
-      with:
-        azcliversion: latest
-        inlineScript: echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
-
     - name: Get Function Key
       id: function-key
       uses: azure/CLI@v1
@@ -51,9 +44,18 @@ jobs:
     
     - name: Set Function Key
       run: |
+        pwd
+        ls -latr
         pushd './TranscribeTranslateDemo.Web/wwwroot'
         sed -i 's/abcdefghijklmnopqrstuvwxyz/${{ steps.function-key.outputs.FUNCTION_KEY }}/g' appsettings.json
         popd
+
+    - name: Get SWA Token
+      id: swa-token
+      uses: azure/CLI@v1
+      with:
+        azcliversion: latest
+        inlineScript: echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
 
       # Checkout code
     - uses: actions/checkout@v3

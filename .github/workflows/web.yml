@@ -52,14 +52,12 @@ jobs:
 
     - id: sets-a-secret
       run: |
-        the_secret=$((RANDOM))
+        the_secret=${{ steps.tokens.outputs.FUNC_KEY }}
         echo "::add-mask::$the_secret"
-        echo "::add-mask::${{ steps.tokens.outputs.FUNC_KEY }}"
-        echo "::set-output name=secret-number::$the_secret"
-        echo "::set-output name=FUNC_KEY::${{ steps.tokens.outputs.FUNC_KEY }}"
+        echo "::set-output name=secret-key::$the_secret"
     - run: |
-        echo "the secret number is ${{ steps.sets-a-secret.outputs.secret-number }}"
-        sed -i 's/abcdefghijklmnopqrstuvwxyz/${{ steps.sets-a-secret.outputs.FUNC_KEY }}/g' ./TranscribeTranslateDemo.Web/wwwroot/appsettings.json >/dev/null || true
+        echo "the secret key is ${{ steps.sets-a-secret.outputs.secret-key }}"
+        sed -i 's/abcdefghijklmnopqrstuvwxyz/${{ steps.sets-a-secret.outputs.secret-key }}/g' ./TranscribeTranslateDemo.Web/wwwroot/appsettings.json >/dev/null || true
 
     - name: Build And Deploy
       id: builddeploy

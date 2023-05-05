@@ -12,8 +12,5 @@ az staticwebapp secrets list --name GSTransDemoswa --resource-group GSTransDemo
 az staticwebapp secrets list --name GSTransDemoswa --query 'properties.apiKey'
 az staticwebapp secrets reset-api-key --name GSTransDemoswa --resource-group GSTransDemo --no-wait
 
-
-az functionapp keys list --name ${{ vars.RESOURCE_NAME }}func --resource-group ${{ vars.RESOURCE_NAME }} --query 'masterKey') | tr -d '"'
-
-az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type systemKeys --key-name default
-az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'systemKeys.default'
+az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type functionKeys --key-name default
+az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'functionKeys.default'

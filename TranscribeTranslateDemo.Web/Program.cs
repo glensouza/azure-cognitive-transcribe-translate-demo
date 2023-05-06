@@ -16,12 +16,10 @@ HttpClient http = new()
     }
 };
 
+builder.Services.AddScoped(sp => http);
+
 using HttpResponseMessage response = await http.GetAsync("/api/settings");
 await using Stream stream = await response.Content.ReadAsStreamAsync();
-
 builder.Configuration.AddJsonStream(stream);
-http.DefaultRequestHeaders.Add("x-function-key", builder.Configuration["FunctionKey"]);
-
-builder.Services.AddScoped(sp => http);
 
 await builder.Build().RunAsync();

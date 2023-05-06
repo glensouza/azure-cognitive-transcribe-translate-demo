@@ -16,7 +16,7 @@ namespace TranscribeTranslateDemo.API
         }
 
         [Function("WeatherForecast")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
+        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
             Random randomNumber = new();
             int temp = 0;
@@ -25,7 +25,7 @@ namespace TranscribeTranslateDemo.API
             {
                 Date = DateTime.Now.AddDays(index),
                 TemperatureC = temp = randomNumber.Next(-20, 55),
-                Summary = this.GetSummary(temp)
+                Summary = GetSummary(temp)
             }).ToArray();
 
             HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
@@ -34,22 +34,15 @@ namespace TranscribeTranslateDemo.API
             return response;
         }
 
-        private string GetSummary(int temp)
+        private static string GetSummary(int temp)
         {
-            string summary = "Mild";
-
-            if (temp >= 32)
+            string summary = temp switch
             {
-                summary = "Hot";
-            }
-            else if (temp <= 16 && temp > 0)
-            {
-                summary = "Cold";
-            }
-            else if (temp <= 0)
-            {
-                summary = "Freezing";
-            }
+                >= 32 => "Hot",
+                <= 16 and > 0 => "Cold",
+                <= 0 => "Freezing",
+                _ => "Mild"
+            };
 
             return summary;
         }

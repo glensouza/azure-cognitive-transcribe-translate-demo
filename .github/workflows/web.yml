@@ -40,22 +40,18 @@ jobs:
       with:
         submodules: true
 
-    - name: Get Tokens
-      id: tokens
+    - name: Get SWA Tokens
+      id: swatoken
       uses: azure/CLI@v1
       with:
         azcliversion: latest
-        inlineScript: |
-          az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type functionKeys --key-name default >/dev/null || true
-          FUNC_KEY=$(az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'functionKeys.default' | tr -d '"')
-          az functionapp config appsettings set --resource-group GSTransDemo --name GSTransDemofunc --settings "FunctionKey=$FUNC_KEY" >/dev/null || true
-          echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
+        inlineScript: echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
 
     - name: Build And Deploy
       id: builddeploy
       uses: Azure/static-web-apps-deploy@v1
       with:
-        azure_static_web_apps_api_token: ${{ steps.tokens.outputs.SWA_TOKEN }}
+        azure_static_web_apps_api_token: ${{ steps.swatoken.outputs.SWA_TOKEN }}
         repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
         action: "upload"
         ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
@@ -65,8 +61,8 @@ jobs:
         output_location: "wwwroot" # Built app content directory - optional
         ###### End of Repository/Build Configurations ######
 
-    - name: Reset SWA Token
-      uses: azure/CLI@v1
-      with:
-        azcliversion: latest
-        inlineScript: az staticwebapp secrets reset-api-key --name ${{ vars.RESOURCE_NAME }}swa --resource-group ${{ vars.RESOURCE_NAME }} --no-wait
+    # - name: Reset SWA Token
+    #   uses: azure/CLI@v1
+    #   with:
+    #     azcliversion: latest
+    #     inlineScript: az staticwebapp secrets reset-api-key --name ${{ vars.RESOURCE_NAME }}swa --resource-group ${{ vars.RESOURCE_NAME }} --no-wait

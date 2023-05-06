@@ -47,17 +47,16 @@ jobs:
         azcliversion: latest
         inlineScript: |
           az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type functionKeys --key-name default >/dev/null || true
-          FUNC_KEY=$(az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'functionKeys.default') | tr -d '"'
-          echo $FUNC_KEY
+          $FUNC_KEY=$(az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'functionKeys.default') | tr -d '"'
           az functionapp config appsettings set --resource-group GSTransDemo --name GSTransDemofunc --settings "FunctionKey=$FUNC_KEY" >/dev/null || true
           # echo TEST_KEY_REPLACE=$(sed -i 's/abcdefghijklmnopqrstuvwxyz/$FUNC_KEY/g' ./TranscribeTranslateDemo.Web/wwwroot/appsettings.json) >/dev/null || true
           echo SWA_TOKEN=$(az staticwebapp secrets list --name ${{ vars.RESOURCE_NAME }}swa --query 'properties.apiKey') | tr -d '"' >> "$GITHUB_OUTPUT"
 
     # - name: create mask 
     #   id: test-secret
-    #   run: echo ::add-mask::${{steps.tokens.outputs.FUNC_KEY}}
+    #   run: echo ::add-mask::${{ steps.tokens.outputs.FUNC_KEY }}
     
-    # - run: echo ${{steps.tokens.outputs.FUNC_KEY}}
+    # - run: echo ${{ steps.tokens.outputs.FUNC_KEY }}
 
     # - run: |
     #     echo "the secret key is ${{ steps.tokens.outputs.FUNC_KEY }}"

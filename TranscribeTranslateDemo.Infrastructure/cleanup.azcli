@@ -15,5 +15,5 @@ az staticwebapp secrets reset-api-key --name GSTransDemoswa --resource-group GST
 az functionapp keys set --resource-group GSTransDemo --name GSTransDemofunc --key-type functionKeys --key-name default
 az functionapp keys list --resource-group GSTransDemo --name GSTransDemofunc --query 'functionKeys.default'
 
-az functionapp config appsettings list --resource-group GSTransDemo --name GSTransDemofunc
-az functionapp config appsettings set --resource-group GSTransDemo --name GSTransDemofunc --settings "AzureWebJobsStorage=$storageConnectionString"
+az functionapp config appsettings list --resource-group GSTransDemo --name GSTransDemofunc --query '[?name==`SignalrServiceConnectionString`].value'
+az functionapp config appsettings set --resource-group GSTransDemo --name GSTransDemofunc --settings "SignalrServiceConnectionString=abc"

@@ -22,7 +22,7 @@ namespace TranscribeTranslateDemo.API
         {
             this.logger.LogInformation("C# HTTP trigger function processed a request.");
 
-            return new Shared.Settings { Test = this.configuration.GetValue<string>("FUNCTIONS_WORKER_RUNTIME") };
+            return new Shared.Settings { FunctionKey = this.configuration.GetValue<string>("FunctionKey") };
         }
     }
 }

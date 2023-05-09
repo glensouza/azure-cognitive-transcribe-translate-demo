@@ -217,8 +217,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       APPINSIGHTS_INSTRUMENTATIONKEY: applicationInsights.properties.InstrumentationKey
       FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
       FUNCTIONS_EXTENSION_VERSION: '~4'
-      SignalrServiceConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
-      // FunctionKey: listkeys('${functionApp.id}/host/default', '2016-08-01').functionKeys.default
+      AzureSignalRConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
     }
     dependsOn: [storageFunctionAppPermissions]
   }  
@@ -257,10 +256,21 @@ resource signalRService 'Microsoft.SignalRService/SignalR@2020-05-01' = {
     capacity: 1
   }
   properties: {
+    features: [
+      {
+        flag: 'ServiceMode'
+        value: 'Serverless'
+        properties: {
+        }
+      }
+    ]
     cors: {
       allowedOrigins: [
         '*'
       ]
+    }
+    serverless: {
+      connectionTimeoutInSeconds: 30
     }
   }
 }

@@ -9,15 +9,25 @@ namespace TranscribeTranslateDemo.API
     public class WeatherForecastFunction
     {
         private readonly ILogger logger;
+        private readonly SignalRHub signalRHub;
 
         public WeatherForecastFunction(ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger<WeatherForecastFunction>();
+            this.signalRHub = new SignalRHub(loggerFactory);
         }
 
         [Function("WeatherForecast")]
         public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
         {
+            this.logger.LogInformation("HERE");
+
+            //string? userId = req.Headers.GetValues("x-ms-client-principal-id").First();
+            //this.signalRHub.SendTranscription(new SignalRNotification { Record = "Hello World", UserId = userId });
+            //this.signalRHub.SendTranslation(new SignalRNotification { Record = "Hello World", UserId = userId });
+            //this.signalRHub.SendTranscription(new SignalRNotification { Record = "Hello World" });
+            //this.signalRHub.SendTranslation(new SignalRNotification { Record = "Hello World" });
+
             Random randomNumber = new();
             int temp = 0;
 

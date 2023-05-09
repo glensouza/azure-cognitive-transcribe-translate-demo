@@ -1,12 +1,20 @@
 ﻿@page "/"
 @inject HttpClient Http
 @inject IConfiguration Configuration
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
+@using System.Diagnostics
 
 <PageTitle>Index</PageTitle>
 
+<h2>Transcription: @transcription</h2>
+<h2>Translation: @translation</h2>
+
+<h3>@userId</h3>
+
 <h1>Hello, world!</h1>
 
-Welcome to your new app.
+Welcome to your new app
 
 <SurveyPrompt Title="How is Blazor working for you?" />
 
@@ -16,7 +24,7 @@ Welcome to your new app.
 
 <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 
-<h1>Weather forecast</h1>
+<h1>Weather forecast.</h1>
 
 <p>This component demonstrates fetching data from the function.</p>
 
@@ -52,25 +60,66 @@ else
 @code {
     private int currentCount = 0;
     private WeatherForecast[]? forecasts;
+    private HubConnection? hubConnection;
+    private string? apiLocation = string.Empty;
+    private string transcription = string.Empty;
+    private string translation = string.Empty;
+    private string userId = string.Empty;
 
-    private void IncrementCount()
+    private async Task IncrementCount()
     {
         currentCount++;
+        forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("/api/WeatherForecast") ?? new WeatherForecast[] { };
+        StateHasChanged();
     }
 
     protected override async Task OnInitializedAsync()
     {
+        this.apiLocation = Http.BaseAddress?.ToString();
+        if (string.IsNullOrEmpty(this.apiLocation))
+        {
+            throw new InvalidDataException();
+        }
+
+        string userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
+        this.userId = userId;
+        Console.WriteLine(userId);
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>("transcription", (message) =>
+        {
+            this.transcription = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>("translation", (message) =>
+        {
+            this.translation = message;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+
         try
         {
-            //forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("sample-data/weather.json");
-            forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("/api/WeatherForecast") ?? new WeatherForecast[]{};
-
-            string ss = Configuration["Test"];
+            forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("/api/WeatherForecast") ?? new WeatherForecast[] { };
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.ToString());
             forecasts = new WeatherForecast[] { };
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
         }
     }
 }

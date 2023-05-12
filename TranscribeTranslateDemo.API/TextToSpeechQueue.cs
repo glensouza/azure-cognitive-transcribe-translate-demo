@@ -23,7 +23,7 @@ public class TextToSpeechQueue
     }
 
     [Function("TextToSpeechQueue")]
-    public async Task Run([ServiceBusTrigger("texttospeech", Connection = "AzureWebJobsStorage")] string rowKey)
+    public async Task Run([QueueTrigger("texttospeech", Connection = "AzureWebJobsStorage")] string rowKey)
     {
         this.logger.LogInformation($"C# ServiceBus queue trigger function processed message: {rowKey}");
 
@@ -44,6 +44,6 @@ public class TextToSpeechQueue
             Record = "TEXT TO SPEECH MESSAGE TEST",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, "textToSpeech");
+        this.signalRHub.SendNotification(notification, NotificationTypes.TextToSpeech);
     }
 }

@@ -45,6 +45,6 @@ public class SentimentQueue
             Record = "SENTIMENT MESSAGE TEST",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, "sentiment");
+        this.signalRHub.SendNotification(notification, NotificationTypes.Sentiment);
     }
 }

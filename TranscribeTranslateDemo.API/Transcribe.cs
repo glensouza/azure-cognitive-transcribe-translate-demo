@@ -95,13 +95,13 @@ namespace TranscribeTranslateDemo.API
                 Record = $"PRE TRANSCRIPTION ROWKEY: {rowKey}",
                 UserId = userId
             };
-            this.signalRHub.SendNotification(notification, "rowKey");
+            this.signalRHub.SendNotification(notification, NotificationTypes.RowKey);
 
             await cloudBlockBlob.UploadAsync(filename);
             string uri = cloudBlockBlob.Uri.AbsoluteUri;
             // TODO: SignalR uri to client
             notification.Record = $"PRE TRANSCRIPTION URI: {uri}";
-            this.signalRHub.SendNotification(notification, "uri");
+            this.signalRHub.SendNotification(notification, NotificationTypes.Uri);
 
             try
             {

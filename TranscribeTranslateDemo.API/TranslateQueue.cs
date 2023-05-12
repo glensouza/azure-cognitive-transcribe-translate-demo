@@ -26,7 +26,7 @@ public class TranslateQueue
     }
 
     [Function("TranslateQueue")]
-    public async Task Run([ServiceBusTrigger("translate", Connection = "AzureWebJobsStorage")] string rowKey)
+    public async Task Run([QueueTrigger("translate", Connection = "AzureWebJobsStorage")] string rowKey)
     {
         this.logger.LogInformation($"C# ServiceBus queue trigger function processed message: {rowKey}");
 
@@ -47,7 +47,7 @@ public class TranslateQueue
             Record = "TRANSLATE MESSAGE TEST",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, "translate");
+        this.signalRHub.SendNotification(notification, NotificationTypes.Translation);
 
         await this.textToSpeechQueueClient.SendMessageAsync(rowKey);
     }

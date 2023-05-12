@@ -49,7 +49,7 @@ public class TranscribeQueue
             Record = "TRANSCRIPTION MESSAGE TEST",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, "transcription");
+        this.signalRHub.SendNotification(notification, NotificationTypes.Transcription);
 
         await this.translateQueueClient.SendMessageAsync(rowKey);
         await this.sentimentQueueClient.SendMessageAsync(rowKey);

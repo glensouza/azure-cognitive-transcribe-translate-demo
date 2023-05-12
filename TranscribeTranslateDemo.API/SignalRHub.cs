@@ -33,36 +33,17 @@ namespace TranscribeTranslateDemo.API
             return connectionInfo;
         }
 
-        [Function("transcriptionNotification")]
+        [Function("NotifyUser")]
         [SignalROutput(HubName = "notifications")]
-        public SignalRMessageAction SendTranscription([HttpTrigger(AuthorizationLevel.Anonymous, "post")] SignalRNotification transcription)
+        public SignalRMessageAction SendNotification([HttpTrigger(AuthorizationLevel.Anonymous, "post")] SignalRNotification transcription, string target)
         {
             this.logger.LogInformation("SignalR Transcription = '{0}'", transcription.Record);
-            SignalRMessageAction signalRMessage = new("transcription")
+            SignalRMessageAction signalRMessage = new(target)
             {
                 Arguments = new[] { transcription.Record },
                 UserId = transcription.UserId
             };
             return signalRMessage;
-        }
-
-        [Function("translationNotification")]
-        [SignalROutput(HubName = "notifications")]
-        public SignalRMessageAction SendTranslation([HttpTrigger(AuthorizationLevel.Anonymous, "post")] SignalRNotification translation)
-        {
-            string userId = "";
-            string message = "";
-            //this.logger.LogInformation("SignalR Translation = '{0}'", translation.Record);
-            //return new SignalRMessageAction("translation")
-            //{
-            //    Arguments = new[] { translation.Record },
-            //    UserId = translation.UserId
-            //};
-            return new SignalRMessageAction("translation")
-            {
-                Arguments = new[] { message }, //translation.Record
-                UserId = userId //translation.UserId
-            };
         }
     }
 }

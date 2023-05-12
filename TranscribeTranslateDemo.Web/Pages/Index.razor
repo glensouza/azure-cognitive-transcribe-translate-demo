@@ -4,13 +4,12 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.Json
 @using System.Diagnostics
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
 <PageTitle>Index</PageTitle>
 
 <h2>Transcription: @transcription</h2>
 <h2>Translation: @translation</h2>
-
-<h3>@userId</h3>
 
 <h1>Hello, world!</h1>
 
@@ -64,7 +63,6 @@ else
     private string? apiLocation = string.Empty;
     private string transcription = string.Empty;
     private string translation = string.Empty;
-    private string userId = string.Empty;
 
     private async Task IncrementCount()
     {
@@ -75,15 +73,15 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
+
         this.apiLocation = Http.BaseAddress?.ToString();
         if (string.IsNullOrEmpty(this.apiLocation))
         {
             throw new InvalidDataException();
         }
 
-        string userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
-        this.userId = userId;
-        Console.WriteLine(userId);
+        string userId = await LocalStorage.GetItemAsync<string>("userId");
 
         hubConnection = new HubConnectionBuilder()
             .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })

@@ -1,0 +1,115 @@
+﻿@page "/audioTest"
+@using System.Diagnostics
+@using System.Runtime.Serialization.Formatters.Binary
+@using Newtonsoft.Json
+@inject HttpClient Http
+@inject IJSRuntime JavaScriptRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<PageTitle>Audio Test</PageTitle>
+
+<div class="wrapper">
+    <header>
+        <h1>Speech to Text and Translation</h1>
+    </header>
+    <section class="main-controls mt-4">
+        <h2>Record Speech</h2>
+        <canvas class="visualizer"></canvas>
+        <button @onclick="RecordAudioStart" class="btn btn-danger" disabled="@disableRecordAudioStart"><span class="oi oi-media-record" aria-hidden="true"></span> Start Record</button>
+        <button @onclick="RecordAudioStop" class="btn btn-primary" disabled="@disableRecordAudioStop"><span class="oi oi-media-stop" aria-hidden="true"></span> Stop</button>
+    </section>
+    <section class="soundClip" hidden="@hideSubmitAudio">
+        <h2>Recording Ready to Submit</h2>
+        <audio controls src="@blobUrl"></audio>
+        <button @onclick="DeleteAudio" class="btn btn-primary"><span class="oi oi-delete" aria-hidden="true"></span> Delete</button>
+        <button @onclick="ReRecordAudio" class="btn btn-primary"><span class="oi oi-loop-circular" aria-hidden="true"></span> Record Again</button>
+        <button @onclick="SubmitAudio" class="btn btn-primary"><span class="oi oi-data-transfer-upload" aria-hidden="true"></span> Upload</button>
+    </section>
+    <section class="sound-clips">
+    </section>
+</div>
+
+@code {
+    bool disableRecordAudioStart = false;
+    bool disableRecordAudioStop = true;
+    bool hideSubmitAudio = true;
+    string blobUrl = string.Empty;
+    private string userId = string.Empty;
+    private string apiLocation = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        this.userId = await LocalStorage.GetItemAsync<string>("userId");
+        this.apiLocation = Http.BaseAddress?.ToString() ?? string.Empty;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        await JavaScriptRuntime.InvokeVoidAsync("AudioTest.Init", DotNetObjectReference.Create(this));
+    }
+
+    private void RecordAudioStart()
+    {
+        disableRecordAudioStart = true;
+        disableRecordAudioStop = false;
+        JavaScriptRuntime.InvokeVoidAsync("AudioTest.Record");
+    }
+
+    private void RecordAudioStop()
+    {
+        disableRecordAudioStart = false;
+        disableRecordAudioStop = true;
+        JavaScriptRuntime.InvokeVoidAsync("AudioTest.Stop");
+    }
+
+    private async Task SubmitAudio()
+    {
+        hideSubmitAudio = true;
+        this.blobUrl = string.Empty;
+        await InvokeAsync(StateHasChanged);
+
+        //string json = JsonConvert.SerializeObject(macroModel, Formatting.None);
+        //StringContent stringContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        //HttpResponseMessage resr = await Http.PostAsync("api/Person/FromMacroCalculator", stringContent);
+
+        _ = JavaScriptRuntime.InvokeVoidAsync("AudioTest.Upload", this.apiLocation, this.userId);
+    }
+
+    private async Task ReRecordAudio()
+    {
+        hideSubmitAudio = true;
+        this.blobUrl = string.Empty;
+        disableRecordAudioStart = true;
+        disableRecordAudioStop = false;
+        await InvokeAsync(StateHasChanged);
+        _ = JavaScriptRuntime.InvokeVoidAsync("AudioTest.Record");
+    }
+
+    private async Task DeleteAudio()
+    {
+        hideSubmitAudio = true;
+        this.blobUrl = string.Empty;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnAudioUrl(string url)
+    {
+        //if (!string.IsNullOrEmpty(blob))
+        //{
+        //    var audioBytes = Encoder.GetBytes(blob);
+  
+        //    await File.WriteAllBytesAsync("audio.wav", audioBytes);
+        //}
+
+        // MemoryStream blob
+        //byte[] ss = blob.ToArray();
+        //await blob.DisposeAsync();
+        this.blobUrl = url;
+        hideSubmitAudio = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}

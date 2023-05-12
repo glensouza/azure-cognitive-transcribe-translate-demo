@@ -1,0 +1,99 @@
+﻿@page "/transcriptions"
+@using TranscribeTranslateDemo.Shared
+@using Microsoft.AspNetCore.SignalR.Client
+@inject HttpClient Http
+
+<PageTitle>Transcriptions</PageTitle>
+
+<h2>Transcription: @transcription</h2>
+<h2>Translation: @translation</h2>
+
+<h3>@userId</h3>
+
+<h1>Transcriptions</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp. (C)</th>
+                <th>Temp. (F)</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (WeatherForecast? forecast in forecasts)
+            {
+                <tr>
+                    <td>@forecast.Date.ToShortDateString()</td>
+                    <td>@forecast.TemperatureC</td>
+                    <td>@forecast.TemperatureF</td>
+                    <td>@forecast.Summary</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private WeatherForecast[]? forecasts;
+    private HubConnection? hubConnection;
+    private string? apiLocation = string.Empty;
+    private string transcription = string.Empty;
+    private string translation = string.Empty;
+    private string userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        this.apiLocation = Http.BaseAddress?.ToString();
+        if (string.IsNullOrEmpty(this.apiLocation))
+        {
+            throw new InvalidDataException();
+        }
+
+        string userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
+        this.userId = userId;
+        Console.WriteLine(userId);
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>("transcription", (message) =>
+        {
+            this.transcription = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>("translation", (message) =>
+        {
+            this.translation = message;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+
+        try
+        {
+            forecasts = await Http.GetFromJsonAsync<WeatherForecast[]>("/api/WeatherForecast") ?? new WeatherForecast[] { };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            forecasts = new WeatherForecast[] { };
+        }
+    }
+
+
+}

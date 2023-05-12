@@ -1,0 +1,138 @@
+﻿@page "/record"
+@inject HttpClient Http
+@inject IConfiguration Configuration
+@inject IJSRuntime mJS
+@using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
+@using System.Diagnostics
+
+<PageTitle>Audio Recorder</PageTitle>
+
+<h1>Audio Recorder</h1>
+<hr />
+<button @onclick="butRecordAudioStart_Click" class="btn btn-danger" disabled="@mDisableRecordAudioStart"><span class="oi oi-media-record" aria-hidden="true"></span> Start Record</button>
+<button @onclick="butRecordAudioPause_Click" class="btn btn-primary" disabled="@mDisableRecordAudioPause"><span class="oi oi-media-pause" aria-hidden="true"></span> Pause</button>
+<button @onclick="butRecordAudioResume_Click" class="btn btn-primary" disabled="@mDisableRecordAudioResume"><span class="oi oi-media-record" aria-hidden="true"></span> Resume</button>
+<button @onclick="butRecordAudioStop_Click" class="btn btn-primary" disabled="@mDisableRecordAudioStop"><span class="oi oi-media-stop" aria-hidden="true"></span> Stop</button>
+<button @onclick="butDownloadBlob_Click" class="btn btn-primary" disabled="@mDisableDownloadBlob"><span class="oi oi-data-transfer-download" aria-hidden="true"></span> Download Audio</button>
+<hr />
+<audio controls autoplay src="@mUrl"></audio>
+<hr />
+
+<h2>Transcription: @transcription</h2>
+<h2>Translation: @translation</h2>
+
+<h3>@userId</h3>
+
+
+@code {
+    private HubConnection? hubConnection;
+    private string? apiLocation = string.Empty;
+    private string transcription = string.Empty;
+    private string translation = string.Empty;
+    private string userId = string.Empty;
+
+    string mUrl = string.Empty;
+    private const string FormatDateTimeStamp = "yyyy_MM_dd__HH_mm_ss_ffff";
+    bool mDisableRecordAudioStart;
+    bool mDisableRecordAudioPause = true;
+    bool mDisableRecordAudioResume = true;
+    bool mDisableRecordAudioStop = true;
+    bool mDisableDownloadBlob = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        await mJS.InvokeVoidAsync("BlazorAudioRecorder.Initialize", DotNetObjectReference.Create(this));
+
+        this.apiLocation = Http.BaseAddress?.ToString();
+        if (string.IsNullOrEmpty(this.apiLocation))
+        {
+            throw new InvalidDataException();
+        }
+
+        this.userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>("transcription", (message) =>
+        {
+            this.transcription = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>("translation", (message) =>
+        {
+            this.translation = message;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    void butRecordAudioStart_Click()
+    {
+        mUrl = "";
+        mDisableRecordAudioStart = true;
+        mDisableRecordAudioPause = false;
+        mDisableRecordAudioResume = true;
+        mDisableRecordAudioStop = false;
+        mDisableDownloadBlob = true;
+        mJS.InvokeVoidAsync("BlazorAudioRecorder.StartRecord");
+    }
+
+    void butRecordAudioPause_Click()
+    {
+        mDisableRecordAudioStart = true;
+        mDisableRecordAudioPause = true;
+        mDisableRecordAudioResume = false;
+        mDisableRecordAudioStop = false;
+        mDisableDownloadBlob = true;
+        mJS.InvokeVoidAsync("BlazorAudioRecorder.PauseRecord");
+    }
+
+    void butRecordAudioResume_Click()
+    {
+        mDisableRecordAudioStart = true;
+        mDisableRecordAudioPause = false;
+        mDisableRecordAudioResume = true;
+        mDisableRecordAudioStop = false;
+        mDisableDownloadBlob = true;
+        mJS.InvokeVoidAsync("BlazorAudioRecorder.ResumeRecord");
+    }
+
+    void butRecordAudioStop_Click()
+    {
+        mDisableRecordAudioStart = false;
+        mDisableRecordAudioPause = true;
+        mDisableRecordAudioResume = true;
+        mDisableRecordAudioStop = true;
+        mDisableDownloadBlob = false;
+        mJS.InvokeVoidAsync("BlazorAudioRecorder.StopRecord");
+    }
+
+    void butDownloadBlob_Click()
+    {
+        string dateTimeStamp = DateTime.Now.ToString(FormatDateTimeStamp);
+        mJS.InvokeVoidAsync("BlazorAudioRecorder.DownloadBlob", this.mUrl, $"MyRecording_{dateTimeStamp}.mp3");
+    }
+
+    [JSInvokable]
+    public async Task OnAudioUrl(string vUrl)
+    {
+        this.mUrl = vUrl;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

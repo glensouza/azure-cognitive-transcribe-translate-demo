@@ -1,9 +1,12 @@
 using Azure.Data.Tables;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Azure.Storage.Queues;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TranscribeTranslateDemo.API;
+using TranscribeTranslateDemo.API.QueueClients;
 
 IConfiguration config = new ConfigurationBuilder()
     .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
@@ -28,12 +31,10 @@ IHost host = new HostBuilder()
             container.CreateIfNotExists();
             return container;
         });
-        s.AddSingleton(_ =>
-        {
-            QueueClient queue = new(storageConnectionString, "demo");
-            queue.CreateIfNotExists();
-            return queue;
-        });
+        s.AddSingleton(_ => new TranscribeQueueClient(storageConnectionString));
+        s.AddSingleton(_ => new TranslateQueueClient(storageConnectionString));
+        s.AddSingleton(_ => new SentimentQueueClient(storageConnectionString));
+        s.AddSingleton(_ => new TextToSpeechQueueClient(storageConnectionString));
     })
     .Build();
 

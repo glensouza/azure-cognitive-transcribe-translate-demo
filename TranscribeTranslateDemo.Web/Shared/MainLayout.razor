@@ -1,4 +1,6 @@
 ﻿@inherits LayoutComponentBase
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 
 <div class="page">
     <div class="sidebar">
@@ -7,6 +9,7 @@
 
     <main>
         <div class="top-row px-4">
+            <span>@userId</span>
             <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
         </div>
 
@@ -15,3 +18,22 @@
         </article>
     </main>
 </div>
+
+@code {
+    private string userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        string savedUserId = await localStorage.GetItemAsync<string>("userId");
+        if (string.IsNullOrEmpty(savedUserId))
+        {
+            savedUserId = Guid.NewGuid().ToString();
+            await localStorage.SetItemAsync("userId", savedUserId);
+        }
+
+        Http.DefaultRequestHeaders.Add("x-ms-client-principal-id", savedUserId);
+        this.userId = savedUserId;
+    }
+}

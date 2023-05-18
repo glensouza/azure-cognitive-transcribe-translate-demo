@@ -63,9 +63,13 @@ public class TranscribeQueue
         await this.notificationQueueClient.SendMessageAsync(notification);
 
         string filename = Path.ChangeExtension(Path.GetTempFileName(), FileExtensions.Mp3);
+        this.logger.LogInformation("filename: {0}", filename);
         string directoryName = Path.GetDirectoryName(filename)!;
+        this.logger.LogInformation("directoryName: {0}", directoryName);
         string outputPath = Path.Combine(directoryName, $"{rowKey}.flac");
+        this.logger.LogInformation("outputPath: {0}", outputPath);
         string synthPath = Path.Combine(directoryName, $"{rowKey}synth.mp3");
+        this.logger.LogInformation("synthPath: {0}", synthPath);
         await blobClient.DownloadToAsync(outputPath);
 
         this.speechTranslationConfig.SpeechRecognitionLanguage = demo.LanguageFrom;

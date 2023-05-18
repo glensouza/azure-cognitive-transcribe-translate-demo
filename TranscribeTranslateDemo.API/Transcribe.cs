@@ -59,13 +59,19 @@ namespace TranscribeTranslateDemo.API
             Stream stream = audioFile.Data;
 
             string? localRoot = Environment.GetEnvironmentVariable("AzureWebJobsScriptRoot");
+            this.logger.LogInformation("localRoot: {0}", localRoot);
             string azureRoot = Path.Combine($"{Environment.GetEnvironmentVariable("HOME")}", "site","wwwroot");
+            this.logger.LogInformation("azureRoot: {0}", azureRoot);
             string rootPath = localRoot ?? azureRoot;
-
+            this.logger.LogInformation("rootPath: {0}", rootPath);
             FFmpeg.ExecutablesPath = rootPath;
+
             string outputPath = Path.ChangeExtension(Path.GetTempFileName(), FileExtensions.Mp3);
+            this.logger.LogInformation("outputPath: {0}", outputPath);
             string directoryName = Path.GetDirectoryName(outputPath)!;
+            this.logger.LogInformation("directoryName: {0}", directoryName);
             string filename = Path.Combine(directoryName, $"{audioFile.FileName}.mp3");
+            this.logger.LogInformation("filename: {0}", filename);
 
             await using (FileStream file = new(filename, FileMode.Create, FileAccess.Write))
             {

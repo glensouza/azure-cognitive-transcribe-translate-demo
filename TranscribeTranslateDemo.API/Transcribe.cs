@@ -30,14 +30,16 @@ namespace TranscribeTranslateDemo.API
         private readonly SignalRHub signalRHub;
         private readonly TableClient tableClient;
         private readonly BlobContainerClient blobContainerClient;
+        private readonly NotificationQueueClient notificationQueueClient;
         private readonly TranscribeQueueClient transcribeQueueClient;
 
-        public Transcribe(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, TranscribeQueueClient transcribeQueueClient)
+        public Transcribe(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, NotificationQueueClient notificationQueueClient, TranscribeQueueClient transcribeQueueClient)
         {
             this.logger = loggerFactory.CreateLogger<Transcribe>();
             this.signalRHub = new SignalRHub(loggerFactory);
             this.tableClient = tableClient;
             this.blobContainerClient = blobClient;
+            this.notificationQueueClient = notificationQueueClient;
             this.transcribeQueueClient = transcribeQueueClient;
         }
 
@@ -89,19 +91,19 @@ namespace TranscribeTranslateDemo.API
                 fileExists = await cloudBlockBlob.ExistsAsync();
             }
 
-            // TODO: SignalR rowkey to client
             SignalRNotification notification = new()
             {
+                Target = NotificationTypes.RowKey,
                 Record = $"PRE TRANSCRIPTION ROWKEY: {rowKey}",
                 UserId = userId
             };
-            this.signalRHub.SendNotification(notification, NotificationTypes.RowKey);
+            await this.notificationQueueClient.SendMessageAsync(notification);
 
             await cloudBlockBlob.UploadAsync(filename);
             string uri = cloudBlockBlob.Uri.AbsoluteUri;
-            // TODO: SignalR uri to client
+            notification.Target = NotificationTypes.Uri;
             notification.Record = $"PRE TRANSCRIPTION URI: {uri}";
-            this.signalRHub.SendNotification(notification, NotificationTypes.Uri);
+            await this.notificationQueueClient.SendMessageAsync(notification);
 
             try
             {

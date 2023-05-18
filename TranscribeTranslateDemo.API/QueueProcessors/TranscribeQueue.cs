@@ -6,7 +6,7 @@ using TranscribeTranslateDemo.API.Entities;
 using TranscribeTranslateDemo.API.QueueClients;
 using TranscribeTranslateDemo.Shared;
 
-namespace TranscribeTranslateDemo.API;
+namespace TranscribeTranslateDemo.API.QueueProcessors;
 
 public class TranscribeQueue
 {
@@ -16,8 +16,9 @@ public class TranscribeQueue
     private readonly BlobContainerClient blobContainerClient;
     private readonly TranslateQueueClient translateQueueClient;
     private readonly SentimentQueueClient sentimentQueueClient;
+    private readonly NotificationQueueClient notificationQueueClient;
 
-    public TranscribeQueue(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, TranslateQueueClient translateQueueClient, SentimentQueueClient sentimentQueueClient)
+    public TranscribeQueue(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, TranslateQueueClient translateQueueClient, SentimentQueueClient sentimentQueueClient, NotificationQueueClient notificationQueueClient)
     {
         this.logger = loggerFactory.CreateLogger<TranscribeQueue>();
         this.signalRHub = new SignalRHub(loggerFactory);
@@ -25,10 +26,11 @@ public class TranscribeQueue
         this.blobContainerClient = blobClient;
         this.translateQueueClient = translateQueueClient;
         this.sentimentQueueClient = sentimentQueueClient;
+        this.notificationQueueClient = notificationQueueClient;
     }
 
     [Function("TranscribeQueue")]
-    public async Task Run([QueueTrigger("transcribe", Connection = "AzureWebJobsStorage")] string rowKey)
+    public async Task Run([QueueTrigger(NotificationTypes.Transcription, Connection = "AzureWebJobsStorage")] string rowKey)
     {
         this.logger.LogInformation($"C# Queue trigger function processed: {rowKey}");
 
@@ -46,10 +48,11 @@ public class TranscribeQueue
 
         SignalRNotification notification = new()
         {
-            Record = "TRANSCRIPTION MESSAGE TEST",
+            Target = NotificationTypes.Transcription,
+            Record = $"TRANSCRIPTION MESSAGE {rowKey}",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, NotificationTypes.Transcription);
+        await this.notificationQueueClient.SendMessageAsync(notification);
 
         await this.translateQueueClient.SendMessageAsync(rowKey);
         await this.sentimentQueueClient.SendMessageAsync(rowKey);

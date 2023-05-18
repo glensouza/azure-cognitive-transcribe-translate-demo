@@ -31,10 +31,11 @@ IHost host = new HostBuilder()
             container.CreateIfNotExists();
             return container;
         });
-        s.AddSingleton(_ => new TranscribeQueueClient(storageConnectionString));
-        s.AddSingleton(_ => new TranslateQueueClient(storageConnectionString));
+        s.AddSingleton(_ => new NotificationQueueClient(storageConnectionString));
         s.AddSingleton(_ => new SentimentQueueClient(storageConnectionString));
         s.AddSingleton(_ => new TextToSpeechQueueClient(storageConnectionString));
+        s.AddSingleton(_ => new TranscribeQueueClient(storageConnectionString));
+        s.AddSingleton(_ => new TranslateQueueClient(storageConnectionString));
     })
     .Build();
 

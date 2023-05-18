@@ -11,13 +11,13 @@ namespace TranscribeTranslateDemo.API
 
         public Rate(ILoggerFactory loggerFactory)
         {
-            _logger = loggerFactory.CreateLogger<Rate>();
+            this._logger = loggerFactory.CreateLogger<Rate>();
         }
 
         [Function("Rate")]
         public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req)
         {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
+            this._logger.LogInformation("C# HTTP trigger function processed a request.");
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");

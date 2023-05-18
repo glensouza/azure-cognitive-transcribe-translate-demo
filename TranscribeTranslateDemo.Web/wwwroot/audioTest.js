@@ -1,10 +1,8 @@
 var AudioTest = {};
 
 (function () {
-    // Basic variables for app
-    var soundClips;
-    var canvas;
     // visualiser variables
+    var canvas;
     var audioCtx;
     var canvasCtx;
     // Main variables
@@ -18,52 +16,12 @@ var AudioTest = {};
     var mediaRecorderOnStop = function (e) {
         console.log("data available after MediaRecorder.stop() called.");
 
-        //const clipName = prompt('Enter a name for your sound clip?', 'My unnamed clip');
-        const clipName = null;
-
-        const clipContainer = document.createElement('article');
-        const clipLabel = document.createElement('p');
-        const audio = document.createElement('audio');
-        const deleteButton = document.createElement('button');
-
-        clipContainer.classList.add('clip');
-        audio.setAttribute('controls', '');
-        deleteButton.textContent = 'Delete';
-        deleteButton.className = 'delete';
-
-        if (clipName === null) {
-            clipLabel.textContent = 'My unnamed clip';
-        } else {
-            clipLabel.textContent = clipName;
-        }
-
-        clipContainer.appendChild(audio);
-        clipContainer.appendChild(clipLabel);
-        clipContainer.appendChild(deleteButton);
-        soundClips.appendChild(clipContainer);
-
-        audio.controls = true;
         blob = new Blob(chunks, { type: 'audio/webm' });
 
         chunks = [];
         const audioURL = window.URL.createObjectURL(blob);
-        audio.src = audioURL;
         console.log("recorder stopped");
         dotnetCaller.invokeMethodAsync('OnAudioUrl', audioURL);
-
-        deleteButton.onclick = function (e) {
-            e.target.closest(".clip").remove();
-        }
-
-        clipLabel.onclick = function () {
-            const existingName = clipLabel.textContent;
-            const newClipName = prompt('Enter a new name for your sound clip?');
-            if (newClipName === null) {
-                clipLabel.textContent = existingName;
-            } else {
-                clipLabel.textContent = newClipName;
-            }
-        }
     }
 
     function visualize(stream) {
@@ -119,11 +77,8 @@ var AudioTest = {};
     AudioTest.Init = function (caller) {
         dotnetCaller = caller;
 
-        // set up basic variables for app
-        soundClips = document.querySelector('.sound-clips');
-        canvas = document.querySelector('.visualizer');
-
         // visualiser setup - create web audio api context and canvas
+        canvas = document.querySelector('.visualizer');
         canvasCtx = canvas.getContext("2d");
         canvasCtx.fillStyle = 'rgb(200, 200, 200)';
         canvasCtx.lineWidth = 2;
@@ -183,23 +138,7 @@ var AudioTest = {};
         fd.append("userId", userId);
         fd.append("file", blob, filename);
         let xhr = new XMLHttpRequest();
-    //    xhr.addEventListener("load", transferComplete);
-    //    xhr.addEventListener("error", transferFailed)
-    //    xhr.addEventListener("abort", transferFailed)
         xhr.open("POST", apiUrl + "api/Transcribe", true);
         xhr.send(fd);
-
-        //const formData = new FormData();
-        //formData.append('file', blob);
-        //formData.append('userId', userId);
-        //formData.append("languageFrom", this.languageSelected.languageCode);
-        //formData.append("languageTo", this.languageSelected.languageCode === "en-US" ? "es-MX" : "en-US");
-
-        //this.http.post("/api/Transcribe", formData).subscribe(
-        //    (res) => {
-        //        console.log(res);
-        //    },
-        //    (err) => console.log(err)
-        //);
     }
 })();

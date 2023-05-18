@@ -4,27 +4,28 @@ using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using TranscribeTranslateDemo.API.Entities;
+using TranscribeTranslateDemo.API.QueueClients;
 using TranscribeTranslateDemo.Shared;
 
-namespace TranscribeTranslateDemo.API;
+namespace TranscribeTranslateDemo.API.QueueProcessors;
 
 public class SentimentQueue
 {
     private readonly ILogger logger;
-    private readonly SignalRHub signalRHub;
     private readonly TableClient tableClient;
     private readonly BlobContainerClient blobContainerClient;
+    private readonly NotificationQueueClient notificationQueueClient;
 
-    public SentimentQueue(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient)
+    public SentimentQueue(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, NotificationQueueClient notificationQueueClient)
     {
         this.logger = loggerFactory.CreateLogger<SentimentQueue>();
-        this.signalRHub = new SignalRHub(loggerFactory);
         this.tableClient = tableClient;
         this.blobContainerClient = blobClient;
+        this.notificationQueueClient = notificationQueueClient;
     }
 
     [Function("SentimentQueue")]
-    public async Task Run([QueueTrigger("sentiment", Connection = "AzureWebJobsStorage")] string rowKey)
+    public async Task Run([QueueTrigger(NotificationTypes.Sentiment, Connection = "AzureWebJobsStorage")] string rowKey)
     {
         this.logger.LogInformation($"C# Queue trigger function processed: {rowKey}");
 
@@ -42,9 +43,10 @@ public class SentimentQueue
 
         SignalRNotification notification = new()
         {
-            Record = "SENTIMENT MESSAGE TEST",
+            Target = NotificationTypes.Sentiment,
+            Record = $"SENTIMENT MESSAGE {rowKey}",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, NotificationTypes.Sentiment);
+        await this.notificationQueueClient.SendMessageAsync(notification);
     }
 }

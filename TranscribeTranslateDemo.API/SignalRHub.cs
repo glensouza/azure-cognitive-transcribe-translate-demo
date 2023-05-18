@@ -8,14 +8,14 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using TranscribeTranslateDemo.Shared;
+using Azure.Storage.Blobs;
+using TranscribeTranslateDemo.API.Entities;
 
 namespace TranscribeTranslateDemo.API
 {
     public class SignalRHub
     {
         private readonly ILogger logger;
-        private static readonly HttpClient HttpClient = new();
-        private static string Etag = string.Empty;
         private static int StarCount = 0;
 
         public SignalRHub(ILoggerFactory loggerFactory)
@@ -26,23 +26,18 @@ namespace TranscribeTranslateDemo.API
         [Function("negotiate")]
         public string Negotiate(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req,
-            [SignalRConnectionInfoInput(HubName = "notifications", UserId = "{headers.x-ms-client-principal-id}", ConnectionStringSetting = "AzureSignalRConnectionString")] string connectionInfo)
-            //[SignalRConnectionInfoInput(HubName = "notifications", ConnectionStringSetting = "AzureSignalRConnectionString")] string connectionInfo)
+            [SignalRConnectionInfoInput(ConnectionStringSetting = "AzureSignalRConnectionString", HubName = "notifications", UserId = "{headers.x-ms-client-principal-id}")] string connectionInfo)
         {
-            this.logger.LogInformation($"SignalR Connection Info = '{connectionInfo}'");
+            this.logger.LogInformation("SignalR Connection Info = '{0}'", connectionInfo);
             return connectionInfo;
         }
 
-        [Function("NotifyUser")]
-        [SignalROutput(HubName = "notifications")]
-        public SignalRMessageAction SendNotification([HttpTrigger(AuthorizationLevel.Anonymous, "post")] SignalRNotification transcription, string target)
+        [Function("NotificationQueue")]
+        [SignalROutput(ConnectionStringSetting = "AzureSignalRConnectionString", HubName = "notifications")]
+        public SignalRMessageAction NotificationQueue([QueueTrigger(NotificationTypes.Notification, Connection = "AzureWebJobsStorage")] SignalRNotification notification)
         {
-            this.logger.LogInformation("SignalR Transcription = '{0}'", transcription.Record);
-            SignalRMessageAction signalRMessage = new(target)
-            {
-                Arguments = new[] { transcription.Record },
-                UserId = transcription.UserId
-            };
+            this.logger.LogInformation("SignalR Notification = '{0}'", notification.Record);
+            SignalRMessageAction signalRMessage = new(notification.Target, new object[] { notification.Record }) { UserId = notification.UserId };
             return signalRMessage;
         }
     }

@@ -4,13 +4,12 @@ namespace TranscribeTranslateDemo.Shared;
 
 public class SignalRNotification
 {
+    [JsonProperty("target", NullValueHandling = NullValueHandling.Ignore)]
+    public string Target { get; set; } = string.Empty;
+
     [JsonProperty("userId", NullValueHandling = NullValueHandling.Ignore)]
     public string UserId { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the record.
-    /// </summary>
-    /// <value>The record.</value>
     [JsonProperty("record", NullValueHandling = NullValueHandling.Ignore)]
-    public object Record { get; set; }
+    public string Record { get; set; } = string.Empty;
 }

@@ -5,11 +5,11 @@
 
 <PageTitle>Settings</PageTitle>
 
-<h2>Transcription: @transcription</h2>
+@*<h2>Transcription: @transcription</h2>
 <h2>Translation: @translation</h2>
 
 <h3>@userId</h3>
-
+*@
 <h1>Settings</h1>
 
 <p>This component demonstrates fetching data from the server.</p>
@@ -47,42 +47,42 @@ else
     private WeatherForecast[]? forecasts;
     private HubConnection? hubConnection;
     private string? apiLocation = string.Empty;
-    private string transcription = string.Empty;
-    private string translation = string.Empty;
-    private string userId = string.Empty;
+    //private string transcription = string.Empty;
+    //private string translation = string.Empty;
+    //private string userId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        this.apiLocation = Http.BaseAddress?.ToString();
-        if (string.IsNullOrEmpty(this.apiLocation))
+        apiLocation = Http.BaseAddress?.ToString();
+        if (string.IsNullOrEmpty(apiLocation))
         {
             throw new InvalidDataException();
         }
 
-        string userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
-        this.userId = userId;
-        Console.WriteLine(userId);
+        //string userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
+        //this.userId = userId;
+        //Console.WriteLine(userId);
 
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
-            .WithAutomaticReconnect()
-            .Build();
+        //hubConnection = new HubConnectionBuilder()
+        //    .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+        //    .WithAutomaticReconnect()
+        //    .Build();
 
-        hubConnection.On<string>("transcription", (message) =>
-        {
-            this.transcription = message;
-            StateHasChanged();
-        });
+        //hubConnection.On<string>("transcription", (message) =>
+        //{
+        //    this.transcription = message;
+        //    StateHasChanged();
+        //});
 
-        hubConnection.On<string>("translation", (message) =>
-        {
-            this.translation = message;
-            StateHasChanged();
-        });
+        //hubConnection.On<string>("translation", (message) =>
+        //{
+        //    this.translation = message;
+        //    StateHasChanged();
+        //});
 
-        await hubConnection.StartAsync();
+        //await hubConnection.StartAsync();
 
         try
         {

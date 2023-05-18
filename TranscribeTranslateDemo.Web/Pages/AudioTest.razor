@@ -1,10 +1,11 @@
 ﻿@page "/audioTest"
-@using System.Diagnostics
-@using System.Runtime.Serialization.Formatters.Binary
-@using Newtonsoft.Json
 @inject HttpClient Http
 @inject IJSRuntime JavaScriptRuntime
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@using System.Diagnostics
+@using System.Runtime.Serialization.Formatters.Binary
+@using Newtonsoft.Json
+@using Microsoft.AspNetCore.SignalR.Client
 
 <PageTitle>Audio Test</PageTitle>
 
@@ -25,7 +26,15 @@
         <button @onclick="ReRecordAudio" class="btn btn-primary"><span class="oi oi-loop-circular" aria-hidden="true"></span> Record Again</button>
         <button @onclick="SubmitAudio" class="btn btn-primary"><span class="oi oi-data-transfer-upload" aria-hidden="true"></span> Upload</button>
     </section>
-    <section class="sound-clips">
+    <section>
+        <ul>
+            <li>RowKey: @rowKey</li>
+            <li>Uri: @uri</li>
+            <li>Transcription: @transcription</li>
+            <li>Sentiment: @sentiment</li>
+            <li>Translation: @translation</li>
+            <li>Text-To-Speech: @textToSpeech</li>
+        </ul>
     </section>
 </div>
 
@@ -34,15 +43,65 @@
     bool disableRecordAudioStop = true;
     bool hideSubmitAudio = true;
     string blobUrl = string.Empty;
+    private HubConnection? hubConnection;
     private string userId = string.Empty;
     private string apiLocation = string.Empty;
+    string rowKey = string.Empty;
+    string uri = string.Empty;
+    string transcription = string.Empty;
+    string sentiment = string.Empty;
+    string translation = string.Empty;
+    string textToSpeech = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        this.userId = await LocalStorage.GetItemAsync<string>("userId");
-        this.apiLocation = Http.BaseAddress?.ToString() ?? string.Empty;
+        userId = await LocalStorage.GetItemAsync<string>("userId");
+        apiLocation = Http.BaseAddress?.ToString() ?? string.Empty;
+
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>(NotificationTypes.Sentiment, (message) =>
+        {
+            sentiment = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>(NotificationTypes.TextToSpeech, (message) =>
+        {
+            textToSpeech = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>(NotificationTypes.Transcription, (message) =>
+        {
+            transcription = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>(NotificationTypes.Translation, (message) =>
+        {
+            translation = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>(NotificationTypes.RowKey, (message) =>
+        {
+            rowKey = message;
+            StateHasChanged();
+        });
+
+        hubConnection.On<string>(NotificationTypes.Uri, (message) =>
+        {
+            uri = message;
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -68,20 +127,15 @@
     private async Task SubmitAudio()
     {
         hideSubmitAudio = true;
-        this.blobUrl = string.Empty;
+        blobUrl = string.Empty;
         await InvokeAsync(StateHasChanged);
-
-        //string json = JsonConvert.SerializeObject(macroModel, Formatting.None);
-        //StringContent stringContent = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        //HttpResponseMessage resr = await Http.PostAsync("api/Person/FromMacroCalculator", stringContent);
-
-        _ = JavaScriptRuntime.InvokeVoidAsync("AudioTest.Upload", this.apiLocation, this.userId);
+        _ = JavaScriptRuntime.InvokeVoidAsync("AudioTest.Upload", apiLocation, userId);
     }
 
     private async Task ReRecordAudio()
     {
         hideSubmitAudio = true;
-        this.blobUrl = string.Empty;
+        blobUrl = string.Empty;
         disableRecordAudioStart = true;
         disableRecordAudioStop = false;
         await InvokeAsync(StateHasChanged);
@@ -91,7 +145,7 @@
     private async Task DeleteAudio()
     {
         hideSubmitAudio = true;
-        this.blobUrl = string.Empty;
+        blobUrl = string.Empty;
         await InvokeAsync(StateHasChanged);
     }
 
@@ -108,7 +162,7 @@
         // MemoryStream blob
         //byte[] ss = blob.ToArray();
         //await blob.DisposeAsync();
-        this.blobUrl = url;
+        blobUrl = url;
         hideSubmitAudio = false;
         await InvokeAsync(StateHasChanged);
     }

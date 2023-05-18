@@ -75,32 +75,32 @@ else
     {
         await base.OnInitializedAsync();
 
-        this.apiLocation = Http.BaseAddress?.ToString();
-        if (string.IsNullOrEmpty(this.apiLocation))
+        apiLocation = Http.BaseAddress?.ToString();
+        if (string.IsNullOrEmpty(apiLocation))
         {
             throw new InvalidDataException();
         }
 
-        string userId = await LocalStorage.GetItemAsync<string>("userId");
+        ////string userId = await LocalStorage.GetItemAsync<string>("userId");
 
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
-            .WithAutomaticReconnect()
-            .Build();
+        ////hubConnection = new HubConnectionBuilder()
+        ////    .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+        ////    .WithAutomaticReconnect()
+        ////    .Build();
 
-        hubConnection.On<string>("transcription", (message) =>
-        {
-            this.transcription = message;
-            StateHasChanged();
-        });
+        ////hubConnection.On<string>("transcription", (message) =>
+        ////{
+        ////    this.transcription = message;
+        ////    StateHasChanged();
+        ////});
 
-        hubConnection.On<string>("translation", (message) =>
-        {
-            this.translation = message;
-            StateHasChanged();
-        });
+        ////hubConnection.On<string>("translation", (message) =>
+        ////{
+        ////    this.translation = message;
+        ////    StateHasChanged();
+        ////});
 
-        await hubConnection.StartAsync();
+        ////await hubConnection.StartAsync();
 
         try
         {

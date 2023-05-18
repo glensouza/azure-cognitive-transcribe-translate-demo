@@ -6,7 +6,7 @@ using TranscribeTranslateDemo.API.Entities;
 using TranscribeTranslateDemo.API.QueueClients;
 using TranscribeTranslateDemo.Shared;
 
-namespace TranscribeTranslateDemo.API;
+namespace TranscribeTranslateDemo.API.QueueProcessors;
 
 public class TranslateQueue
 {
@@ -15,20 +15,22 @@ public class TranslateQueue
     private readonly TableClient tableClient;
     private readonly BlobContainerClient blobContainerClient;
     private readonly TextToSpeechQueueClient textToSpeechQueueClient;
+    private readonly NotificationQueueClient notificationQueueClient;
 
-    public TranslateQueue(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, TextToSpeechQueueClient textToSpeechQueueClient)
+    public TranslateQueue(ILoggerFactory loggerFactory, TableClient tableClient, BlobContainerClient blobClient, TextToSpeechQueueClient textToSpeechQueueClient, NotificationQueueClient notificationQueueClient)
     {
         this.logger = loggerFactory.CreateLogger<TranslateQueue>();
         this.signalRHub = new SignalRHub(loggerFactory);
         this.tableClient = tableClient;
         this.blobContainerClient = blobClient;
         this.textToSpeechQueueClient = textToSpeechQueueClient;
+        this.notificationQueueClient = notificationQueueClient;
     }
 
     [Function("TranslateQueue")]
-    public async Task Run([QueueTrigger("translate", Connection = "AzureWebJobsStorage")] string rowKey)
+    public async Task Run([QueueTrigger(NotificationTypes.Translation, Connection = "AzureWebJobsStorage")] string rowKey)
     {
-        this.logger.LogInformation($"C# ServiceBus queue trigger function processed message: {rowKey}");
+        this.logger.LogInformation("C# ServiceBus queue trigger function processed message: {0}", rowKey);
 
         DemoEntity? demo = await this.tableClient.GetEntityAsync<DemoEntity>("Demo", rowKey);
         if (demo == null)
@@ -44,10 +46,11 @@ public class TranslateQueue
 
         SignalRNotification notification = new()
         {
-            Record = "TRANSLATE MESSAGE TEST",
+            Target = NotificationTypes.Translation,
+            Record = $"TRANSLATE MESSAGE {rowKey}",
             UserId = demo.UserId
         };
-        this.signalRHub.SendNotification(notification, NotificationTypes.Translation);
+        await this.notificationQueueClient.SendMessageAsync(notification);
 
         await this.textToSpeechQueueClient.SendMessageAsync(rowKey);
     }

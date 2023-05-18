@@ -174,15 +174,14 @@ resource appServicePlanFunc 'Microsoft.Web/serverfarms@2022-03-01' = {
     name: appServicePlanFuncSKU
     tier: appServicePlanFuncTier
   }
-  properties: {
-    reserved: true
-  }
+  kind: 'functionapp'
+  properties: {}
 }
 
 resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
   name: functionAppName
   location: location
-  kind: 'functionapp,linux'
+  kind: 'functionapp'
   identity: {
     type: 'SystemAssigned'
   }
@@ -191,21 +190,8 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
     serverFarmId: appServicePlanFunc.id
     siteConfig: {
       numberOfWorkers: 1
-      linuxFxVersion: 'DOTNET-ISOLATED|7.0'
       functionAppScaleLimit: 200
       minimumElasticInstanceCount: 0
-      minTlsVersion: '1.2'
-      scmMinTlsVersion: '1.2'
-      preWarmedInstanceCount: 0
-      managedPipelineMode: 'Integrated'
-      loadBalancing: 'LeastRequests'
-      publicNetworkAccess: 'Enabled'
-      cors: {
-        allowedOrigins: [
-          'https://portal.azure.com'
-        ]
-        supportCredentials: false
-      }
     }
     httpsOnly: true
   }
@@ -216,6 +202,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       AzureWebJobsStorage: storageAccountConnectionString
       APPINSIGHTS_INSTRUMENTATIONKEY: applicationInsights.properties.InstrumentationKey
       FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
+      netFrameworkVersion: 'v7.0'
       FUNCTIONS_EXTENSION_VERSION: '~4'
       AzureSignalRConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
       SpeechKey: speechService.listKeys().key1

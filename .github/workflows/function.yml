@@ -24,7 +24,6 @@ permissions:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: './TranscribeTranslateDemo.API'
-  DOTNET_VERSION: '7.0.x'
 
 jobs:
   build-and-deploy:
@@ -40,10 +39,10 @@ jobs:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@v2
 
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+      - name: Setup DotNet 7 Environment
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '7.0.x'
 
       - name: 'Resolve Project Dependencies Using Dotnet'
         shell: bash

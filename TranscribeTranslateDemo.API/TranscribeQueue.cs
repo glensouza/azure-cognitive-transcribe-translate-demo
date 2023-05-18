@@ -64,8 +64,8 @@ public class TranscribeQueue
 
         string filename = Path.ChangeExtension(Path.GetTempFileName(), FileExtensions.Mp3);
         string directoryName = Path.GetDirectoryName(filename)!;
-        string outputPath = $"{directoryName}\\{rowKey}.flac";
-        string synthPath = $"{directoryName}\\{rowKey}synth.mp3";
+        string outputPath = Path.Combine(directoryName, $"{rowKey}.flac");
+        string synthPath = Path.Combine(directoryName, $"{rowKey}synth.mp3");
         await blobClient.DownloadToAsync(outputPath);
 
         this.speechTranslationConfig.SpeechRecognitionLanguage = demo.LanguageFrom;

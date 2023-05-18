@@ -14,6 +14,7 @@ using Xabe.FFmpeg.Enums;
 using Xabe.FFmpeg.Streams;
 using TranscribeTranslateDemo.Shared;
 using Azure.Storage.Sas;
+using Microsoft.CognitiveServices.Speech.Transcription;
 
 namespace TranscribeTranslateDemo.API
 {
@@ -58,13 +59,13 @@ namespace TranscribeTranslateDemo.API
             Stream stream = audioFile.Data;
 
             string? localRoot = Environment.GetEnvironmentVariable("AzureWebJobsScriptRoot");
-            string azureRoot = $"{Environment.GetEnvironmentVariable("HOME")}/site/wwwroot";
+            string azureRoot = Path.Combine($"{Environment.GetEnvironmentVariable("HOME")}", "site","wwwroot");
             string rootPath = localRoot ?? azureRoot;
 
             FFmpeg.ExecutablesPath = rootPath;
             string outputPath = Path.ChangeExtension(Path.GetTempFileName(), FileExtensions.Mp3);
             string directoryName = Path.GetDirectoryName(outputPath)!;
-            string filename = $"{directoryName}\\{audioFile.FileName}.mp3";
+            string filename = Path.Combine(directoryName, $"{audioFile.FileName}.mp3");
 
             await using (FileStream file = new(filename, FileMode.Create, FileAccess.Write))
             {

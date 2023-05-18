@@ -8,7 +8,6 @@ namespace TranscribeTranslateDemo.API
     public class SignalRHub
     {
         private readonly ILogger logger;
-        private static int StarCount = 0;
 
         public SignalRHub(ILoggerFactory loggerFactory)
         {

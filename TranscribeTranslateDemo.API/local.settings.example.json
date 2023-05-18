@@ -4,8 +4,8 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "FunctionKey": "abcdefghijklmnopqrstuvwxyz",
-    "AzureSignalRConnectionString": "Endpoint=https://gstransdemosignalr.service.signalr.net;AccessKey=QQfmN2x0kav5S2jLD1YifBqAYkvim+yK5YtcIX+f5EQ=;Version=1.0;",
-    "SpeechKey": "d615036dacdc4f74b29a36dcffee5b89",
+    "AzureSignalRConnectionString": "Endpoint=https://xxxxxxxx.service.signalr.net;AccessKey=xxxxxxxxxxxxxxx=;Version=1.0;",
+    "SpeechKey": "xxxxxxxxxxxxx",
     "SpeechRegion": "centralus"
   },
   "Host": {

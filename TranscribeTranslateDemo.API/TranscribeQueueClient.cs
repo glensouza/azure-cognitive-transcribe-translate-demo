@@ -1,17 +1,16 @@
 using Azure.Storage.Queues;
 using System.Text;
-using System.Text.Json;
 using TranscribeTranslateDemo.Shared;
 
-namespace TranscribeTranslateDemo.API.QueueClients;
+namespace TranscribeTranslateDemo.API;
 
-public class SentimentQueueClient
+public class TranscribeQueueClient
 {
     private readonly QueueClient queueClient;
 
-    public SentimentQueueClient(string storageConnectionString)
+    public TranscribeQueueClient(string storageConnectionString)
     {
-        this.queueClient = new QueueClient(storageConnectionString, NotificationTypes.Sentiment);
+        this.queueClient = new QueueClient(storageConnectionString, NotificationTypes.Transcription);
         this.queueClient.CreateIfNotExists();
     }
 

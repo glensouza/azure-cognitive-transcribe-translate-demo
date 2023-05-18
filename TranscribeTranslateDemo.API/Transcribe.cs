@@ -1,13 +1,8 @@
-using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
 using System.Net;
-using System.Reflection;
-using System.Threading;
 using Azure.Data.Tables;
 using Azure.Storage.Blobs;
-using Azure.Storage.Blobs.Models;
-using Azure.Storage.Queues;
+using Azure.Storage.Blobs.Specialized;
 using HttpMultipartParser;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -16,11 +11,9 @@ using NAudio.Wave;
 using TranscribeTranslateDemo.API.Entities;
 using Xabe.FFmpeg;
 using Xabe.FFmpeg.Enums;
-using Xabe.FFmpeg.Model;
 using Xabe.FFmpeg.Streams;
-using System;
-using TranscribeTranslateDemo.API.QueueClients;
 using TranscribeTranslateDemo.Shared;
+using Azure.Storage.Sas;
 
 namespace TranscribeTranslateDemo.API
 {
@@ -52,7 +45,7 @@ namespace TranscribeTranslateDemo.API
             MultipartFormDataParser parsedFormBody = await MultipartFormDataParser.ParseAsync(req.Body);
             string? userId = parsedFormBody.GetParameterValue("userId");
             string? languageFrom = parsedFormBody.GetParameterValue("languageFrom") ?? "en-US"; // TODO: languageFrom,
-            string? languageTo = parsedFormBody.GetParameterValue("languageTo") ?? "es-MX"; // TODO: languageTo,
+            string? languageTo = parsedFormBody.GetParameterValue("languageTo") ?? "es-US"; // TODO: languageTo,
             if (parsedFormBody.Files.Count == 0 || string.IsNullOrEmpty(userId))
             {
                 HttpResponseData badRequestResponse = req.CreateResponse(HttpStatusCode.BadRequest);
@@ -82,28 +75,40 @@ namespace TranscribeTranslateDemo.API
             }
 
             string rowKey = Guid.NewGuid().ToString();
-            BlobClient? cloudBlockBlob = this.blobContainerClient.GetBlobClient($"{rowKey}.mp3");
-            bool fileExists = await cloudBlockBlob.ExistsAsync();
+            BlobClient? blobClient = this.blobContainerClient.GetBlobClient($"{rowKey}.mp3");
+            bool fileExists = await blobClient.ExistsAsync();
             while (fileExists)
             {
                 rowKey = Guid.NewGuid().ToString();
-                cloudBlockBlob = this.blobContainerClient.GetBlobClient($"{rowKey}.mp3");
-                fileExists = await cloudBlockBlob.ExistsAsync();
+                blobClient = this.blobContainerClient.GetBlobClient($"{rowKey}.mp3");
+                fileExists = await blobClient.ExistsAsync();
             }
 
             SignalRNotification notification = new()
             {
                 Target = NotificationTypes.RowKey,
-                Record = $"PRE TRANSCRIPTION ROWKEY: {rowKey}",
+                Record = $"{rowKey}",
                 UserId = userId
             };
             await this.notificationQueueClient.SendMessageAsync(notification);
 
-            await cloudBlockBlob.UploadAsync(filename);
-            string uri = cloudBlockBlob.Uri.AbsoluteUri;
-            notification.Target = NotificationTypes.Uri;
-            notification.Record = $"PRE TRANSCRIPTION URI: {uri}";
-            await this.notificationQueueClient.SendMessageAsync(notification);
+            await blobClient.UploadAsync(filename);
+            string uri = blobClient.Uri.AbsoluteUri;
+            if (blobClient.CanGenerateSasUri)
+            {
+                BlobSasBuilder sasBuilder = new()
+                {
+                    BlobContainerName = blobClient.GetParentBlobContainerClient().Name,
+                    BlobName = blobClient.Name,
+                    Resource = "b",
+                    ExpiresOn = DateTimeOffset.UtcNow.AddYears(1)
+                };
+
+                sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+                Uri sasUri = blobClient.GenerateSasUri(sasBuilder);
+                uri = sasUri.AbsoluteUri;
+            }
 
             try
             {
@@ -111,11 +116,9 @@ namespace TranscribeTranslateDemo.API
 
                 IAudioStream audioStream = inputFile.AudioStreams.First();
 
-                //Debugger.Break();
                 int sampleRate = audioStream.SampleRate;
                 int channels = audioStream.Channels;
                 //CodecType codec = audioStream.CodecType;
-                //Debugger.Break();
 
                 if (sampleRate < 41100)
                 {
@@ -139,14 +142,14 @@ namespace TranscribeTranslateDemo.API
                 Debugger.Break();
             }
 
-            cloudBlockBlob = this.blobContainerClient.GetBlobClient($"{rowKey}.flac");
-            fileExists = await cloudBlockBlob.ExistsAsync();
+            blobClient = this.blobContainerClient.GetBlobClient($"{rowKey}.flac");
+            fileExists = await blobClient.ExistsAsync();
             if (fileExists)
             {
-                await cloudBlockBlob.DeleteAsync();
+                await blobClient.DeleteAsync();
             }
 
-            await cloudBlockBlob.UploadAsync(outputPath + ".flac");
+            await blobClient.UploadAsync(outputPath + ".flac");
             File.Delete(filename);
             File.Delete(outputPath + ".flac");
             File.Delete(outputPath);
@@ -156,96 +159,16 @@ namespace TranscribeTranslateDemo.API
                 PartitionKey = "Demo",
                 RowKey = rowKey,
                 UserId = userId,
-                AudioFileUrl = uri,
+                SourceAudioFileUrl = uri,
                 LanguageFrom = languageFrom,
                 LanguageTo = languageTo,
-                Sentiment = string.Empty,
                 Transcription = string.Empty,
-                Translation = string.Empty
+                Translation = string.Empty,
+                TranslatedAudioFileUrl = string.Empty
             };
             await this.tableClient.AddEntityAsync(demo);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            //string filename = audioFile.FileName;
-            //FileInfo fileInfo = new(Assembly.GetExecutingAssembly().Location);
-            //string path = fileInfo.Directory.Parent.FullName;
-            //FileStream objfilestream = new(Path.Combine(path, filename + ".mp3"), FileMode.Create, FileAccess.ReadWrite);
-
-            //using (MemoryStream memoryStream = new())
-            //{
-            //    await stream.CopyToAsync(memoryStream);
-            //    objfilestream.Write(memoryStream.ToArray(), 0, (int)memoryStream.Length);
-            //    objfilestream.Close();
-            //}
-
-
-            //objfilestream.Write(stream, 0, stream.Length);
-            //objfilestream.Close();
-
-
-
-
-            ////DemoEntity demo = new()
-            ////{
-            ////    PartitionKey = "Hello",
-            ////    RowKey = "World",
-            ////    Text = "Hello World!"
-            ////};
-            ////this.tableClient.AddEntity(demo);
-
-
-
-
-
-            ////string filePath = "sample-file";
-
-            ////// Get a reference to a blob named "sample-file" in a container named "sample-container"
-            ////BlobClient blobClient = this.blobContainerClient.GetBlobClient(blobName);
-
-            ////// Upload local file
-            ////blobClient.Upload(filePath);
-
-
-
-
-
-            ////// Get a temporary path on disk where we can download the file
-            ////string downloadPath = "hello.jpg";
-
-            ////// Download the public blob at https://aka.ms/bloburl
-            ////new BlobClient(new Uri("https://aka.ms/bloburl")).DownloadTo(downloadPath);
-            ////// Download the public blob at https://aka.ms/bloburl
-            ////await new BlobClient(new Uri("https://aka.ms/bloburl")).DownloadToAsync(downloadPath);
-
-
-
-
-
-            // Print out all the blob names
-            //foreach (BlobItem blob in this.blobContainerClient.GetBlobs())
-            //{
-            //    Console.WriteLine(blob.Name);
-            //}
-
-
             await this.transcribeQueueClient.SendMessageAsync(rowKey);
-
-
 
             HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
             response.Headers.Add("Content-Type", "text/plain; charset=utf-8");

@@ -218,6 +218,8 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
       FUNCTIONS_EXTENSION_VERSION: '~4'
       AzureSignalRConnectionString: 'Endpoint=https://${signalRService.name}.service.signalr.net;AccessKey=${signalRService.listKeys().primaryKey}'
+      SpeechKey: speechService.listKeys().key1
+      SpeechRegion: location
     }
     dependsOn: [storageFunctionAppPermissions]
   }  

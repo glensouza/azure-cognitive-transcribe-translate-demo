@@ -1,15 +1,7 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using System.Security.Principal;
-using System.Text.Json.Serialization;
-using Azure;
-using System.Text.Json.Serialization;
-using Microsoft.Azure.Functions.Worker;
+﻿using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using TranscribeTranslateDemo.Shared;
-using Azure.Storage.Blobs;
-using TranscribeTranslateDemo.API.Entities;
 
 namespace TranscribeTranslateDemo.API
 {

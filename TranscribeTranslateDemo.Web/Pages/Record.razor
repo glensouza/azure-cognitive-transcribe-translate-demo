@@ -1,138 +1,159 @@
 ﻿@page "/record"
 @inject HttpClient Http
-@inject IConfiguration Configuration
-@inject IJSRuntime mJS
+@inject IJSRuntime JavaScriptRuntime
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @using Microsoft.AspNetCore.SignalR.Client
-@using System.Text.Json
-@using System.Diagnostics
 
-<PageTitle>Audio Recorder</PageTitle>
+<PageTitle>Audio Test</PageTitle>
 
-<h1>Audio Recorder</h1>
-<hr />
-<button @onclick="butRecordAudioStart_Click" class="btn btn-danger" disabled="@mDisableRecordAudioStart"><span class="oi oi-media-record" aria-hidden="true"></span> Start Record</button>
-<button @onclick="butRecordAudioPause_Click" class="btn btn-primary" disabled="@mDisableRecordAudioPause"><span class="oi oi-media-pause" aria-hidden="true"></span> Pause</button>
-<button @onclick="butRecordAudioResume_Click" class="btn btn-primary" disabled="@mDisableRecordAudioResume"><span class="oi oi-media-record" aria-hidden="true"></span> Resume</button>
-<button @onclick="butRecordAudioStop_Click" class="btn btn-primary" disabled="@mDisableRecordAudioStop"><span class="oi oi-media-stop" aria-hidden="true"></span> Stop</button>
-<button @onclick="butDownloadBlob_Click" class="btn btn-primary" disabled="@mDisableDownloadBlob"><span class="oi oi-data-transfer-download" aria-hidden="true"></span> Download Audio</button>
-<hr />
-<audio controls autoplay src="@mUrl"></audio>
-<hr />
-
-<h2>Transcription: @transcription</h2>
-<h2>Translation: @translation</h2>
-
-@*<h3>@userId</h3>*@
-
+<div class="wrapper">
+    <header>
+        <h1>Speech to Text and Translation</h1>
+    </header>
+    <section class="main-controls mt-4">
+        <h2>Record Speech</h2>
+        <canvas class="visualizer"></canvas>
+        <button @onclick="RecordAudioStart" class="btn btn-danger" disabled="@disableRecordAudioStart"><span class="oi oi-media-record" aria-hidden="true"></span> Start Record</button>
+        <button @onclick="RecordAudioStop" class="btn btn-primary" disabled="@disableRecordAudioStop"><span class="oi oi-media-stop" aria-hidden="true"></span> Stop</button>
+    </section>
+    <section class="soundClip" hidden="@hideSubmitAudio">
+        <h2>Recording Ready to Submit</h2>
+        <audio controls src="@blobUrl"></audio>
+        <button @onclick="DeleteAudio" class="btn btn-primary"><span class="oi oi-delete" aria-hidden="true"></span> Delete</button>
+        <button @onclick="ReRecordAudio" class="btn btn-primary"><span class="oi oi-loop-circular" aria-hidden="true"></span> Record Again</button>
+        <button @onclick="SubmitAudio" class="btn btn-primary"><span class="oi oi-data-transfer-upload" aria-hidden="true"></span> Upload</button>
+    </section>
+    <section style="max-width: 800px">
+        <ul>
+            <li>RowKey: @rowKey</li>
+            <li>Transcription: @transcription</li>
+            <li>Translation: @translation</li>
+            <li>Text-To-Speech: @textToSpeech <a href="@textToSpeech" target="_blank">link</a></li>
+        </ul>
+    </section>
+</div>
 
 @code {
+    bool disableRecordAudioStart = false;
+    bool disableRecordAudioStop = true;
+    bool hideSubmitAudio = true;
+    string blobUrl = string.Empty;
     private HubConnection? hubConnection;
-    private string? apiLocation = string.Empty;
-    private string transcription = string.Empty;
-    private string translation = string.Empty;
-    //private string userId = string.Empty;
-
-    string mUrl = string.Empty;
-    private const string FormatDateTimeStamp = "yyyy_MM_dd__HH_mm_ss_ffff";
-    bool mDisableRecordAudioStart;
-    bool mDisableRecordAudioPause = true;
-    bool mDisableRecordAudioResume = true;
-    bool mDisableRecordAudioStop = true;
-    bool mDisableDownloadBlob = true;
+    private string userId = string.Empty;
+    private string apiLocation = string.Empty;
+    string rowKey = string.Empty;
+    string transcription = string.Empty;
+    string translation = string.Empty;
+    string textToSpeech = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
-        await mJS.InvokeVoidAsync("BlazorAudioRecorder.Initialize", DotNetObjectReference.Create(this));
+        userId = await LocalStorage.GetItemAsync<string>("userId");
+        apiLocation = Http.BaseAddress?.ToString() ?? string.Empty;
 
-        apiLocation = Http.BaseAddress?.ToString();
-        if (string.IsNullOrEmpty(apiLocation))
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
+            .WithAutomaticReconnect()
+            .Build();
+
+        hubConnection.On<string>(NotificationTypes.TextToSpeech, (message) =>
         {
-            throw new InvalidDataException();
-        }
+            textToSpeech = message;
+            StateHasChanged();
+        });
 
-        //this.userId = Http.DefaultRequestHeaders.GetValues("x-ms-client-principal-id").First();
+        hubConnection.On<string>(NotificationTypes.Transcription, (message) =>
+        {
+            transcription = message;
+            StateHasChanged();
+        });
 
-        //hubConnection = new HubConnectionBuilder()
-        //    .WithUrl($"{apiLocation}api", options => { options.Headers = new Dictionary<string, string> { ["x-ms-client-principal-id"] = userId }; })
-        //    .WithAutomaticReconnect()
-        //    .Build();
+        hubConnection.On<string>(NotificationTypes.Translation, (message) =>
+        {
+            translation = message;
+            StateHasChanged();
+        });
 
-        //hubConnection.On<string>("transcription", (message) =>
-        //{
-        //    this.transcription = message;
-        //    StateHasChanged();
-        //});
+        hubConnection.On<string>(NotificationTypes.RowKey, (message) =>
+        {
+            rowKey = message;
+            StateHasChanged();
+        });
 
-        //hubConnection.On<string>("translation", (message) =>
-        //{
-        //    this.translation = message;
-        //    StateHasChanged();
-        //});
-
-        //await hubConnection.StartAsync();
+        await hubConnection.StartAsync();
     }
 
-    void butRecordAudioStart_Click()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        mUrl = "";
-        mDisableRecordAudioStart = true;
-        mDisableRecordAudioPause = false;
-        mDisableRecordAudioResume = true;
-        mDisableRecordAudioStop = false;
-        mDisableDownloadBlob = true;
-        mJS.InvokeVoidAsync("BlazorAudioRecorder.StartRecord");
+        await base.OnAfterRenderAsync(firstRender);
+        await JavaScriptRuntime.InvokeVoidAsync("AudioRecorder.Init", DotNetObjectReference.Create(this));
     }
 
-    void butRecordAudioPause_Click()
+    private void RecordAudioStart()
     {
-        mDisableRecordAudioStart = true;
-        mDisableRecordAudioPause = true;
-        mDisableRecordAudioResume = false;
-        mDisableRecordAudioStop = false;
-        mDisableDownloadBlob = true;
-        mJS.InvokeVoidAsync("BlazorAudioRecorder.PauseRecord");
+        Clear();
+        disableRecordAudioStart = true;
+        disableRecordAudioStop = false;
+        JavaScriptRuntime.InvokeVoidAsync("AudioRecorder.Record");
     }
 
-    void butRecordAudioResume_Click()
+    private void RecordAudioStop()
     {
-        mDisableRecordAudioStart = true;
-        mDisableRecordAudioPause = false;
-        mDisableRecordAudioResume = true;
-        mDisableRecordAudioStop = false;
-        mDisableDownloadBlob = true;
-        mJS.InvokeVoidAsync("BlazorAudioRecorder.ResumeRecord");
+        disableRecordAudioStart = false;
+        disableRecordAudioStop = true;
+        JavaScriptRuntime.InvokeVoidAsync("AudioRecorder.Stop");
     }
 
-    void butRecordAudioStop_Click()
+    private async Task SubmitAudio()
     {
-        mDisableRecordAudioStart = false;
-        mDisableRecordAudioPause = true;
-        mDisableRecordAudioResume = true;
-        mDisableRecordAudioStop = true;
-        mDisableDownloadBlob = false;
-        mJS.InvokeVoidAsync("BlazorAudioRecorder.StopRecord");
+        //hideSubmitAudio = true;
+        //blobUrl = string.Empty;
+        //await InvokeAsync(StateHasChanged);
+        _ = JavaScriptRuntime.InvokeVoidAsync("AudioRecorder.Upload", apiLocation, userId);
     }
 
-    void butDownloadBlob_Click()
+    private async Task ReRecordAudio()
     {
-        string dateTimeStamp = DateTime.Now.ToString(FormatDateTimeStamp);
-        mJS.InvokeVoidAsync("BlazorAudioRecorder.DownloadBlob", mUrl, $"MyRecording_{dateTimeStamp}.mp3");
+        Clear();
+        disableRecordAudioStart = true;
+        disableRecordAudioStop = false;
+        await InvokeAsync(StateHasChanged);
+        _ = JavaScriptRuntime.InvokeVoidAsync("AudioRecorder.Record");
     }
 
-    [JSInvokable]
-    public async Task OnAudioUrl(string vUrl)
+    private async Task DeleteAudio()
     {
-        mUrl = vUrl;
+        Clear();
         await InvokeAsync(StateHasChanged);
     }
 
-    public async ValueTask DisposeAsync()
+    private void Clear()
     {
-        if (hubConnection is not null)
-        {
-            await hubConnection.DisposeAsync();
-        }
+        hideSubmitAudio = true;
+        blobUrl = string.Empty;
+        rowKey = string.Empty;
+        transcription = string.Empty;
+        translation = string.Empty;
+        textToSpeech = string.Empty;
+    }
+
+    [JSInvokable]
+    public async Task OnAudioUrl(string url)
+    {
+        //if (!string.IsNullOrEmpty(blob))
+        //{
+        //    var audioBytes = Encoder.GetBytes(blob);
+  
+        //    await File.WriteAllBytesAsync("audio.wav", audioBytes);
+        //}
+
+        // MemoryStream blob
+        //byte[] ss = blob.ToArray();
+        //await blob.DisposeAsync();
+        blobUrl = url;
+        hideSubmitAudio = false;
+        await InvokeAsync(StateHasChanged);
     }
 }

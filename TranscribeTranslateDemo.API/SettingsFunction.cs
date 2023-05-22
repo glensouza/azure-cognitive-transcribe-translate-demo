@@ -8,18 +8,18 @@ using Microsoft.Extensions.Configuration;
 
 namespace TranscribeTranslateDemo.API;
 
-public class Settings
+public class SettingsFunction
 {
     private readonly IConfiguration configuration;
 
-    public Settings(IConfiguration configuration)
+    public SettingsFunction(IConfiguration configuration)
     {
         this.configuration = configuration;
     }
 
     [FunctionName("Settings")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
         ILogger log)
     {
         log.LogInformation("C# HTTP trigger function processed a request.");

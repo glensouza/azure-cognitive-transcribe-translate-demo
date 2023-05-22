@@ -21,12 +21,12 @@ using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace TranscribeTranslateDemo.API;
 
-public class Transcribe
+public class TranscribeFunction
 {
     private readonly NotificationQueueClient notificationQueueClient;
     private readonly TranscribeQueueClient transcribeQueueClient;
 
-    public Transcribe(NotificationQueueClient notificationQueueClient, TranscribeQueueClient transcribeQueueClient)
+    public TranscribeFunction(NotificationQueueClient notificationQueueClient, TranscribeQueueClient transcribeQueueClient)
     {
         this.notificationQueueClient = notificationQueueClient;
         this.transcribeQueueClient = transcribeQueueClient;

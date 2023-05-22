@@ -112,8 +112,16 @@ public class TransActions
                 audioStream.SetChannels(1);
             }
 
-            SpamLog(log, "2.6");
-            await Conversion.New().AddStream(audioStream).SetOutput(outputPath).Start().ConfigureAwait(false);
+            try
+            {
+                SpamLog(log, "2.6a");
+                await Conversion.New().AddStream(audioStream).SetOutput(outputPath).Start().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                SpamLog(log, $"2.6b: {e.Message}");
+                throw;
+            }
 
             SpamLog(log, "2.7");
             await using Mp3FileReader mp3 = new(outputPath);
@@ -483,25 +491,6 @@ public class TransActions
 
     private void SpamLog(ILogger log, string message)
     {
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("");
-
-        log.LogInformation("================================================");
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation(message);
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("================================================");
-
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("");
-        log.LogInformation("");
-
+        log.LogInformation($"\n\n\n\n\n\n================================================\n\n{message}\n\n================================================\n\n\n\n\n");
     }
 }

@@ -89,28 +89,37 @@ public class TransActions
             SpamLog(log, "2");
             IMediaInfo inputFile = await MediaInfo.Get(filePath).ConfigureAwait(false);
 
+            SpamLog(log, "2.1");
             IAudioStream audioStream = inputFile.AudioStreams.First();
 
             //Debugger.Break();
+            SpamLog(log, "2.2");
             int sampleRate = audioStream.SampleRate;
+            SpamLog(log, "2.3");
             int channels = audioStream.Channels;
             //CodecType codec = audioStream.CodecType;
             //Debugger.Break();
 
             if (sampleRate < 41100)
             {
+                SpamLog(log, "2.4");
                 audioStream.SetSampleRate(41100);
             }
 
             if (channels != 1)
             {
+                SpamLog(log, "2.5");
                 audioStream.SetChannels(1);
             }
 
+            SpamLog(log, "2.6");
             await Conversion.New().AddStream(audioStream).SetOutput(outputPath).Start().ConfigureAwait(false);
 
+            SpamLog(log, "2.7");
             await using Mp3FileReader mp3 = new(outputPath);
+            SpamLog(log, "2.8");
             await using WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(mp3);
+            SpamLog(log, "2.9");
             WaveFileWriter.CreateWaveFile($"{outputPath}.flac", pcm);
             //WaveFileWriter.WriteWavFileToStream(outputStream, pcm);
             SpamLog(log, "3");

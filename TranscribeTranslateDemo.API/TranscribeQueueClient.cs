@@ -1,5 +1,7 @@
-using Azure.Storage.Queues;
+﻿using Azure.Storage.Queues;
+using System;
 using System.Text;
+using System.Threading.Tasks;
 using TranscribeTranslateDemo.Shared;
 
 namespace TranscribeTranslateDemo.API;

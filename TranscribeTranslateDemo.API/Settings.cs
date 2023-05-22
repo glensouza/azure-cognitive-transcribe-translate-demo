@@ -1,27 +1,31 @@
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
-namespace TranscribeTranslateDemo.API
+namespace TranscribeTranslateDemo.API;
+
+public class Settings
 {
-    public class Settings
+    private readonly IConfiguration configuration;
+
+    public Settings(IConfiguration configuration)
     {
-        private readonly ILogger logger;
-        private readonly IConfiguration configuration;
+        this.configuration = configuration;
+    }
 
-        public Settings(ILoggerFactory loggerFactory, IConfiguration configuration)
-        {
-            this.logger = loggerFactory.CreateLogger<Settings>();
-            this.configuration = configuration;
-        }
+    [FunctionName("Settings")]
+    public async Task<IActionResult> Run(
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+        ILogger log)
+    {
+        log.LogInformation("C# HTTP trigger function processed a request.");
 
-        [Function("Settings")]
-        public Shared.Settings Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
-        {
-            this.logger.LogInformation("C# HTTP trigger function processed a request.");
+        Shared.Settings settings = new() { FunctionKey = this.configuration.GetValue<string>("FunctionKey") };
 
-            return new Shared.Settings { FunctionKey = this.configuration.GetValue<string>("FunctionKey") };
-        }
+        return new OkObjectResult(settings);
     }
 }

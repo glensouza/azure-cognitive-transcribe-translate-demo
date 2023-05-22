@@ -1,35 +1,47 @@
-﻿using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+﻿using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.Azure.WebJobs.Extensions.SignalRService;
 using Microsoft.Extensions.Logging;
 using TranscribeTranslateDemo.Shared;
 
-namespace TranscribeTranslateDemo.API
+namespace TranscribeTranslateDemo.API;
+
+public class SignalRHub
 {
-    public class SignalRHub
+    private readonly ILogger logger;
+
+    public SignalRHub(ILoggerFactory loggerFactory)
     {
-        private readonly ILogger logger;
+        this.logger = loggerFactory.CreateLogger<SignalRHub>();
+    }
 
-        public SignalRHub(ILoggerFactory loggerFactory)
-        {
-            this.logger = loggerFactory.CreateLogger<SignalRHub>();
-        }
+    [FunctionName("negotiate")]
+    public SignalRConnectionInfo Negotiate(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req,
+        [SignalRConnectionInfo(ConnectionStringSetting = "AzureSignalRConnectionString", HubName = NotificationTypes.SignalRHubName, UserId = "{headers.x-ms-client-principal-id}")] SignalRConnectionInfo connectionInfo)
+    {
+        this.logger.LogInformation("SignalR Connection Info = '{0}'", connectionInfo);
+        return connectionInfo;
+    }
 
-        [Function("negotiate")]
-        public string Negotiate(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req,
-            [SignalRConnectionInfoInput(ConnectionStringSetting = "AzureSignalRConnectionString", HubName = "notifications", UserId = "{headers.x-ms-client-principal-id}")] string connectionInfo)
+    [FunctionName("SendMessage")]
+    public Task SendMessage(
+        [QueueTrigger(queueName: NotificationTypes.Notification, Connection = "AzureWebJobsStorage")] string signalRNotification,
+        [SignalR(ConnectionStringSetting = "AzureSignalRConnectionString", HubName = NotificationTypes.SignalRHubName)] IAsyncCollector<SignalRMessage> signalRMessages)
+    {
+        // deserialize the inbound message
+        SignalRNotification notification = JsonSerializer.Deserialize<SignalRNotification>(signalRNotification);
+        this.logger.LogInformation("SignalR Notification = '{0}'", notification.Record);
+        SignalRMessage signalRMessage = new()
         {
-            this.logger.LogInformation("SignalR Connection Info = '{0}'", connectionInfo);
-            return connectionInfo;
-        }
-
-        [Function("NotificationQueue")]
-        [SignalROutput(ConnectionStringSetting = "AzureSignalRConnectionString", HubName = "notifications")]
-        public SignalRMessageAction NotificationQueue([QueueTrigger(NotificationTypes.Notification, Connection = "AzureWebJobsStorage")] SignalRNotification notification)
-        {
-            this.logger.LogInformation("SignalR Notification = '{0}'", notification.Record);
-            SignalRMessageAction signalRMessage = new(notification.Target, new object[] { notification.Record }) { UserId = notification.UserId };
-            return signalRMessage;
-        }
+            // the message will only be sent to this user ID
+            UserId = notification.UserId,
+            Target = notification.Target,
+            Arguments = new object[] { notification.Record }
+        };
+        return signalRMessages.AddAsync(signalRMessage);
     }
 }

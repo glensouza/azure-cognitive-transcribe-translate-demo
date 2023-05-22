@@ -1,5 +1,7 @@
+﻿using System;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Azure.Storage.Queues;
 using TranscribeTranslateDemo.Shared;
 

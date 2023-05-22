@@ -1,6 +1,7 @@
-﻿namespace TranscribeTranslateDemo.Shared;
-
-public class Settings
+﻿namespace TranscribeTranslateDemo.Shared
 {
-    public string FunctionKey { get; set; } = string.Empty;
+    public class Settings
+    {
+        public string FunctionKey { get; set; } = string.Empty;
+    }
 }

@@ -1,32 +1,22 @@
-using System.Net;
-using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
+using System;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using System.Linq;
 using TranscribeTranslateDemo.Shared;
 
 namespace TranscribeTranslateDemo.API
 {
-    public class WeatherForecastFunction
+    public static class WeatherForecastFunction
     {
-        private readonly ILogger logger;
-        private readonly SignalRHub signalRHub;
-
-        public WeatherForecastFunction(ILoggerFactory loggerFactory)
+        [FunctionName("WeatherForecast")]
+        public static IActionResult Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req,
+            ILogger log)
         {
-            this.logger = loggerFactory.CreateLogger<WeatherForecastFunction>();
-            this.signalRHub = new SignalRHub(loggerFactory);
-        }
-
-        [Function("WeatherForecast")]
-        public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
-        {
-            this.logger.LogInformation("HERE");
-
-            //string? userId = req.Headers.GetValues("x-ms-client-principal-id").First();
-            //this.signalRHub.SendTranscription(new SignalRNotification { Record = "Hello World", UserId = userId });
-            //this.signalRHub.SendTranslation(new SignalRNotification { Record = "Hello World", UserId = userId });
-            //this.signalRHub.SendTranscription(new SignalRNotification { Record = "Hello World" });
-            //this.signalRHub.SendTranslation(new SignalRNotification { Record = "Hello World" });
+            log.LogInformation("C# HTTP trigger function processed a request.");
 
             Random randomNumber = new();
             int temp = 0;
@@ -38,10 +28,7 @@ namespace TranscribeTranslateDemo.API
                 Summary = GetSummary(temp)
             }).ToArray();
 
-            HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
-            response.WriteAsJsonAsync(result);
-
-            return response;
+            return new OkObjectResult(result);
         }
 
         private static string GetSummary(int temp)

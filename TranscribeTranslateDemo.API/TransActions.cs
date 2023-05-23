@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 using NAudio.Wave;
 using TranscribeTranslateDemo.Shared;
 using Xabe.FFmpeg;
-using Xabe.FFmpeg.Downloader;
+//using Xabe.FFmpeg.Downloader;
 
 namespace TranscribeTranslateDemo.API;
 

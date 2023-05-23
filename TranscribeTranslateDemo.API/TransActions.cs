@@ -16,8 +16,7 @@ using Microsoft.Extensions.Logging;
 using NAudio.Wave;
 using TranscribeTranslateDemo.Shared;
 using Xabe.FFmpeg;
-using Xabe.FFmpeg.Enums;
-using Xabe.FFmpeg.Streams;
+using Xabe.FFmpeg.Downloader;
 
 namespace TranscribeTranslateDemo.API;
 
@@ -64,7 +63,7 @@ public class TransActions
         await this.notificationQueueClient.SendMessageAsync(notification);
 
 
-        string outputPath = Path.ChangeExtension(Path.GetTempFileName(), FileExtensions.Mp3);
+        string outputPath = Path.ChangeExtension(Path.GetTempFileName(), ".mp3");
         //Debugger.Break();
         string directoryName = Path.GetDirectoryName(outputPath);
         string filePath = Path.Combine(directoryName, $"{rowKey}.mp3");
@@ -75,8 +74,20 @@ public class TransActions
 
         try
         {
-            SpamLog(log, "1");
-            FFmpeg.ExecutablesPath = context.FunctionAppDirectory;
+            this.SpamLog(log, "1");
+            //FFmpeg.ExecutablesPath = context.FunctionAppDirectory;
+            try
+            {
+                this.SpamLog(log, "1a");
+                FFmpeg.SetExecutablesPath(context.FunctionAppDirectory);
+                await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+            }
+            catch (Exception e)
+            {
+                this.SpamLog(log, $"1b: {e.Message}");
+                Console.WriteLine(e);
+                throw;
+            }
 
             await using (FileStream file = new(filePath, FileMode.Create, FileAccess.Write))
             {
@@ -86,55 +97,84 @@ public class TransActions
                 audioFileStream.Close();
             }
 
-            SpamLog(log, "2");
-            IMediaInfo inputFile = await MediaInfo.Get(filePath).ConfigureAwait(false);
+            this.SpamLog(log, "2");
+            //IMediaInfo inputFile = await MediaInfo.Get(filePath).ConfigureAwait(false);
+            IMediaInfo inputFile = await FFmpeg.GetMediaInfo(filePath);
 
-            SpamLog(log, "2.1");
+            this.SpamLog(log, "2.1");
             IAudioStream audioStream = inputFile.AudioStreams.First();
 
             //Debugger.Break();
-            SpamLog(log, "2.2");
+            this.SpamLog(log, "2.2");
             int sampleRate = audioStream.SampleRate;
-            SpamLog(log, "2.3");
+            this.SpamLog(log, "2.3");
             int channels = audioStream.Channels;
             //CodecType codec = audioStream.CodecType;
             //Debugger.Break();
 
             if (sampleRate < 41100)
             {
-                SpamLog(log, "2.4");
+                this.SpamLog(log, "2.4");
                 audioStream.SetSampleRate(41100);
             }
 
             if (channels != 1)
             {
-                SpamLog(log, "2.5");
+                this.SpamLog(log, "2.5");
                 audioStream.SetChannels(1);
             }
 
             try
             {
-                SpamLog(log, "2.6a");
-                await Conversion.New().AddStream(audioStream).SetOutput(outputPath).Start().ConfigureAwait(false);
+                this.SpamLog(log, "2.6a");
+                //await Conversion.New().AddStream(audioStream).SetOutput(outputPath).Start().ConfigureAwait(false);
+                IConversion conversion = await FFmpeg.Conversions.FromSnippet.Convert(filePath, outputPath);
+
+                this.SpamLog(log, "2.6c");
+                //Set output file path
+                conversion.SetOutput(outputPath)
+                    //SetOverwriteOutput to overwrite files. It's useful when we already run application before
+                    .SetOverwriteOutput(true)
+                    //Disable multithreading
+                    .UseMultiThread(false)
+                    //Set conversion preset. You have to chose between file size and quality of video and duration of conversion
+                    .SetPreset(ConversionPreset.UltraFast);
+
+                this.SpamLog(log, "2.6d");
+                //Add log to OnProgress
+                conversion.OnProgress += (sender, args) =>
+                {
+                    this.SpamLog(log, "2.6e");
+                    //Show all output from FFmpeg to console
+                    log.LogInformation($"[{args.Duration}/{args.TotalLength}][{args.Percent}%] {filePath}");
+                };
+                this.SpamLog(log, "2.6f");
+                //Start conversion
+                await conversion.Start();
+
+                this.SpamLog(log, "2.6g");
+                log.LogInformation($"Finished conversion file [{filePath}]");
             }
             catch (Exception e)
             {
-                SpamLog(log, $"2.6b: {e.Message}");
+                this.SpamLog(log, $"2.6b: {e.Message}");
+                //2.6b: An error occurred trying to start process 'C:\home\site\wwwroot\Xabe.FFmpeg.dll' with working directory 'C:\Program Files (x86)\SiteExtensions\Functions\4.21.1\32bit'. The specified executable is not a valid application for this OS platform.
                 throw;
             }
 
-            SpamLog(log, "2.7");
+            this.SpamLog(log, "2.7");
             await using Mp3FileReader mp3 = new(outputPath);
-            SpamLog(log, "2.8");
+            this.SpamLog(log, "2.8");
             await using WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(mp3);
-            SpamLog(log, "2.9");
+            this.SpamLog(log, "2.9");
             WaveFileWriter.CreateWaveFile($"{outputPath}.flac", pcm);
             //WaveFileWriter.WriteWavFileToStream(outputStream, pcm);
-            SpamLog(log, "3");
+            this.SpamLog(log, "3");
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
+            //Console.WriteLine(ex.Message);
+            log.LogError(ex.Message);
             Debugger.Break();
         }
 
@@ -172,12 +212,12 @@ public class TransActions
         //using AudioConfig audioInput = AudioConfig.FromStreamInput(audioFileStream);
         using AudioConfig audioInput = AudioConfig.FromWavFileInput($"{outputPath}.flac");
         using TranslationRecognizer recognizer = new(this.speechTranslationConfig, audioInput);
-        SpamLog(log, "4");
+        this.SpamLog(log, "4");
 
         // Subscribes to events.
         recognizer.Recognizing += async (s, e) =>
         {
-            SpamLog(log, $"5: {e.Result.Text}");
+            this.SpamLog(log, $"5: {e.Result.Text}");
             notification.Target = NotificationTypes.Transcription;
             notification.Record = $"RECOGNIZING in '{transcription.LanguageFrom}': Text ={e.Result.Text}";
             await this.notificationQueueClient.SendMessageAsync(notification);
@@ -185,7 +225,7 @@ public class TransActions
             notification.Target = NotificationTypes.Translation;
             foreach (KeyValuePair<string, string> element in e.Result.Translations)
             {
-                SpamLog(log, $"6: {element.Value}");
+                this.SpamLog(log, $"6: {element.Value}");
                 notification.Record = $"TRANSLATING into '{element.Key}': {element.Value}";
                 await this.notificationQueueClient.SendMessageAsync(notification);
             }
@@ -193,7 +233,7 @@ public class TransActions
 
         recognizer.Recognized += async (s, e) =>
         {
-            SpamLog(log, "7");
+            this.SpamLog(log, "7");
 
             string recognizedSpeech = string.Empty;
             string translatedSpeech = string.Empty;
@@ -219,8 +259,8 @@ public class TransActions
                     notification.Record = translatedSpeech;
                     await this.notificationQueueClient.SendMessageAsync(notification);
 
-                    SpamLog(log, $"8: {recognizedSpeech}");
-                    SpamLog(log, $"9: {translatedSpeech}");
+                    this.SpamLog(log, $"8: {recognizedSpeech}");
+                    this.SpamLog(log, $"9: {translatedSpeech}");
                     break;
                 case ResultReason.RecognizedSpeech:
                     recognizedSpeech = $"RECOGNIZED: Text={e.Result.Text}";
@@ -241,8 +281,8 @@ public class TransActions
                     notification.Record = "Unable to create synthesized text-to-speech";
                     await this.notificationQueueClient.SendMessageAsync(notification);
 
-                    SpamLog(log, $"10: {recognizedSpeech}");
-                    SpamLog(log, $"11: {translatedSpeech}");
+                    this.SpamLog(log, $"10: {recognizedSpeech}");
+                    this.SpamLog(log, $"11: {translatedSpeech}");
                     break;
                 case ResultReason.NoMatch:
                     recognizedSpeech = "Speech could not be recognized.";
@@ -257,8 +297,8 @@ public class TransActions
                     notification.Record = "Unable to create synthesized text-to-speech";
                     await this.notificationQueueClient.SendMessageAsync(notification);
 
-                    SpamLog(log, $"12: {recognizedSpeech}");
-                    SpamLog(log, $"13: {translatedSpeech}");
+                    this.SpamLog(log, $"12: {recognizedSpeech}");
+                    this.SpamLog(log, $"13: {translatedSpeech}");
                     break;
             }
         };
@@ -280,7 +320,7 @@ public class TransActions
             notification.Record = audioSize;
             await this.notificationQueueClient.SendMessageAsync(notification);
 
-            SpamLog(log, $"14: {audioSize}");
+            this.SpamLog(log, $"14: {audioSize}");
         };
 
         recognizer.Canceled += (s, e) =>
@@ -291,19 +331,19 @@ public class TransActions
             notification.Record = canceledReason;
             //await this.notificationQueueClient.SendMessageAsync(notification);
 
-            SpamLog(log, $"15: {canceledReason}");
+            this.SpamLog(log, $"15: {canceledReason}");
         };
 
         recognizer.SpeechStartDetected += (s, e) =>
         {
             //Console.WriteLine("\nSpeech start detected event.");
-            SpamLog(log, "16: Speech start detected event.");
+            this.SpamLog(log, "16: Speech start detected event.");
         };
 
         recognizer.SpeechEndDetected += (s, e) =>
         {
             //Console.WriteLine("\nSpeech end detected event.");
-            SpamLog(log, "17: Speech end detected event.");
+            this.SpamLog(log, "17: Speech end detected event.");
         };
 
         recognizer.SessionStarted += async (s, e) =>
@@ -320,7 +360,7 @@ public class TransActions
             notification.Record = $"Text-to-speech started {rowKey}";
             await this.notificationQueueClient.SendMessageAsync(notification);
 
-            SpamLog(log, "18: Session Started detected event.");
+            this.SpamLog(log, "18: Session Started detected event.");
         };
 
         recognizer.SessionStopped += (s, e) =>
@@ -331,26 +371,26 @@ public class TransActions
             notification.Record = sessionStopped;
             //await this.notificationQueueClient.SendMessageAsync(notification);
 
-            SpamLog(log, "19: Session Stopped detected event.");
+            this.SpamLog(log, "19: Session Stopped detected event.");
         };
 
         // Starts continuous recognition. Uses StopContinuousRecognitionAsync() to stop recognition.
         //Console.WriteLine("Start translation...");
-        SpamLog(log, "20: Start translation...");
+        this.SpamLog(log, "20: Start translation...");
 
         await recognizer.StartContinuousRecognitionAsync().ConfigureAwait(false);
 
         // Waits for completion.
         // Use Task.WaitAny to keep the task rooted.
         Task.WaitAny(stopTranslation.Task);
-        SpamLog(log, "21");
+        this.SpamLog(log, "21");
         
         // Stops translation.
         await recognizer.StopContinuousRecognitionAsync().ConfigureAwait(false);
-        SpamLog(log, "22");
+        this.SpamLog(log, "22");
 
         await Task.Delay(5000).ConfigureAwait(false);
-        SpamLog(log, "23");
+        this.SpamLog(log, "23");
 
         //await using FileStream fileStream = new(synthPath, FileMode.Create);
         byte[] audio = new byte[translatedAudio.Sum(a => a.Length)];
@@ -364,7 +404,7 @@ public class TransActions
         //fileStream.Flush();
         //fileStream.Close();
 
-        SpamLog(log, "24");
+        this.SpamLog(log, "24");
         BlobClient? synthBlobClient = blobContainerClient.GetBlobClient($"{rowKey}synth.mp3");
         //BlobClient? synthBlobClient = this.blobContainerClient.GetBlobClient($"{rowKey}synth.mp3");
         if (synthBlobClient == null)
@@ -372,7 +412,7 @@ public class TransActions
             return;
         }
 
-        SpamLog(log, "25");
+        this.SpamLog(log, "25");
         bool fileExists = await synthBlobClient.ExistsAsync();
         while (fileExists)
         {
@@ -389,7 +429,7 @@ public class TransActions
             // ignored
         }
 
-        SpamLog(log, "26");
+        this.SpamLog(log, "26");
         string uri = synthBlobClient.Uri.AbsoluteUri;
         if (synthBlobClient.CanGenerateSasUri)
         {
@@ -414,7 +454,7 @@ public class TransActions
             //return new ExceptionResult(new Exception("BlobClient must be authorized with Shared Key credentials to create a service SAS."), false);
         }
 
-        SpamLog(log, "27");
+        this.SpamLog(log, "27");
         string recognizedSpeech = recognizedSpeeches.Aggregate((a, b) => $"{a} {b}");
         string translatedSpeech = translatedSpeeches.Aggregate((a, b) => $"{a} {b}");
 
@@ -436,7 +476,7 @@ public class TransActions
             }
         }
 
-        SpamLog(log, "28");
+        this.SpamLog(log, "28");
         notification.Target = NotificationTypes.Transcription;
         notification.Record = recognizedSpeech;
         await this.notificationQueueClient.SendMessageAsync(notification);

@@ -80,7 +80,7 @@ public class TransActions
             {
                 this.SpamLog(log, "1a");
                 FFmpeg.SetExecutablesPath(context.FunctionAppDirectory);
-                await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
+                //await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
             }
             catch (Exception e)
             {

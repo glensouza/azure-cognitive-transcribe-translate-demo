@@ -193,6 +193,7 @@ resource functionApp 'Microsoft.Web/sites@2022-09-01' = {
       functionAppScaleLimit: 200
       minimumElasticInstanceCount: 0
     }
+    use32BitWorkerProcess: false
     httpsOnly: true
   }
 
